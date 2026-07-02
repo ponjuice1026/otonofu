@@ -1,0 +1,130 @@
+import Link from "next/link";
+import { ThreadPagination } from "@/components/thread/ThreadPagination";
+import { TrendingThreadList } from "@/components/thread/TrendingThreadList";
+import { formatThreadDate } from "@/lib/threads/format";
+import {
+  THREADS_PAGE_SIZE,
+  getDiscussionThreadCount,
+  getDiscussionThreadsPage,
+  getTrendingThreads,
+} from "@/lib/data/threads";
+import { getUser } from "@/lib/auth/session";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { pageTitle } from "@/lib/site";
+
+export const metadata = {
+  title: pageTitle("セッション"),
+  description:
+    "アルバムやアーティストについて語り合う、オトノフのメインセッション一覧。",
+};
+
+export const dynamic = "force-dynamic";
+
+type PageProps = {
+  searchParams: Promise<{ page?: string }>;
+};
+
+export default async function ThreadsPage({ searchParams }: PageProps) {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+
+  const [newestThreads, totalCount, user, trendingThreads] = await Promise.all([
+    getDiscussionThreadsPage(page, THREADS_PAGE_SIZE, "newest"),
+    getDiscussionThreadCount(),
+    getUser(),
+    getTrendingThreads(8),
+  ]);
+
+  return (
+    <div className="page-shell">
+      <header className="page-header">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="home-hero__eyebrow mb-2">Main Feature</p>
+            <h1 className="page-title">セッション</h1>
+            <p className="page-desc">
+              音楽について語り合う、オトノフの中心。セッションを立てて、誰でも参加できます。
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {user ? (
+              <Link href="/threads/new" className="btn-primary">
+                ＋ セッションを作成
+              </Link>
+            ) : (
+              <Link href="/login?redirect=/threads/new" className="btn-secondary">
+                ログインしてセッションを作成
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {!isSupabaseConfigured() && (
+        <p className="alert alert-warning mb-8">
+          Supabase 未設定のため、セッション機能は利用できません。
+        </p>
+      )}
+
+      <section className="mb-14">
+        <div className="section-header">
+          <div>
+            <h2 className="section-title section-title-accent section-accent-violet">
+              いま話題のセッション
+            </h2>
+            <p className="section-desc">最近盛り上がっているセッション</p>
+          </div>
+        </div>
+        <TrendingThreadList threads={trendingThreads} layout="row" />
+      </section>
+
+      <section>
+        <div className="section-header">
+          <div>
+            <h2 className="section-title section-title-accent section-accent-violet">
+              すべてのセッション
+            </h2>
+            <p className="section-desc">
+              {totalCount.toLocaleString("ja-JP")} 件 · 作成日時の新しい順
+            </p>
+          </div>
+        </div>
+
+        {newestThreads.length === 0 ? (
+          <div className="empty-state py-10">まだセッションがありません。</div>
+        ) : (
+          <>
+            <ul className="flex flex-col gap-2">
+              {newestThreads.map((thread) => (
+                <li key={thread.id}>
+                  <Link
+                    href={`/threads/${thread.id}`}
+                    className="card-interactive block px-4 py-4"
+                  >
+                    <h3 className="font-semibold text-neutral-100">
+                      {thread.title}
+                    </h3>
+                    <p className="mt-1 line-clamp-2 text-sm text-neutral-500">
+                      {thread.body}
+                    </p>
+                    <p className="mt-3 text-xs text-neutral-500">
+                      作成: {thread.authorName}
+                      {thread.hasPoll && (
+                        <span className="badge ml-2">投票あり</span>
+                      )}{" "}
+                      · 閲覧 {thread.viewCount.toLocaleString("ja-JP")} · 返信{" "}
+                      {thread.postCount} · 作成{" "}
+                      {formatThreadDate(thread.createdAt)}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <ThreadPagination currentPage={page} totalCount={totalCount} />
+          </>
+        )}
+      </section>
+    </div>
+  );
+}

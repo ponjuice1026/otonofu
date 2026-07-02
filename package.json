@@ -1,0 +1,48 @@
+{
+  "name": "otonofu",
+  "version": "0.1.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryoyuasa2007-bot/-otonofu.git"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "sync:spotify": "tsx scripts/sync-spotify.ts",
+    "sync:spotify:batch": "tsx scripts/sync-spotify.ts --batch",
+    "sync:spotify:queue": "tsx scripts/sync-spotify.ts --queue",
+    "sync:daemon": "tsx scripts/sync-daemon.ts",
+    "sync:status": "tsx scripts/sync-status.ts",
+    "sync:reset-failed": "tsx scripts/reset-failed-queue.ts",
+    "sync:probe": "tsx scripts/probe-spotify.ts",
+    "discover:artists": "tsx scripts/discover-artists.ts",
+    "enqueue:artists": "tsx scripts/enqueue-artists.ts",
+    "sync:spotify:sql": "tsx scripts/export-spotify-sql.ts",
+    "backfill:covers": "tsx scripts/backfill-covers.ts",
+    "backfill:tracks": "tsx scripts/backfill-tracks.ts",
+    "backfill:tracks:all": "tsx scripts/backfill-tracks.ts --limit=0 --delay=1500"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.1",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/ws": "^8.18.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "tailwindcss": "^4",
+    "tsx": "^4.20.3",
+    "typescript": "^5"
+  }
+}

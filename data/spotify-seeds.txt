@@ -1,0 +1,221 @@
+# Spotify 同期対象アーティスト（1行1組）
+# 行頭 # はコメント。名前を追加したら npm run sync:spotify または GitHub Actions を実行
+# 現在の総数: 約180組
+
+# --- フォーク / ニューミュージック / 70–80年代 ---
+荒井由実
+松任谷由実
+大瀧詠一
+竹内まりや
+山下達郎
+小田和正
+中島みゆき
+桑田佳祐
+井上陽水
+吉田拓郎
+さだまさし
+松山千春
+長渕剛
+尾崎豊
+五輪真弓
+加藤和彦
+泉谷しげる
+
+# --- 歌謡曲 / アイドル / 80年代 ---
+美空ひばり
+テレサ・テン
+山口百恵
+西城秀樹
+郷ひろみ
+中森明菜
+松田聖子
+小泉今日子
+ZARD
+大黒摩季
+久保田早紀
+八神純子
+
+# --- シティポップ / フュージョン ---
+Fishmans
+Cornelius
+椎名林檎
+安全地帯
+Pizzicato Five
+細野晴臣
+
+# --- テクノ / 電子音楽 ---
+Yellow Magic Orchestra
+坂本龍一
+電気グルーヴ
+P-MODEL
+戸川純
+
+# --- ニューウェーブ / オルタナ / インディー（80–90年代） ---
+THE STALIN
+有頂天
+BUCK-TICK
+Number Girl
+BLANKEY JET CITY
+THEE MICHELLE GUN ELEPHANT
+eastern youth
+フラワーカンパニーズ
+
+# --- J-ロック / ハードロック ---
+B'z
+WANDS
+TUBE
+爆風スランプ
+THE BOOM
+X JAPAN
+LUNA SEA
+GLAY
+L'Arc〜en〜Ciel
+SOPHIA
+JUDY AND MARY
+THE BLUE HEARTS
+THE HIGH-LOWS
+GOING STEADY
+氣志團
+175R
+MONGOL800
+HY
+10-FEET
+ELLEGARDEN
+FLOW
+ONE OK ROCK
+UVERworld
+MAN WITH A MISSION
+[Alexandros]
+凛として時雨
+
+# --- ヴィジュアル系 ---
+Dir en grey
+Malice Mizer
+ムック
+SID
+the GazettE
+lynch.
+Plastic Tree
+janne da arc
+
+# --- J-POP / 90年代〜2000年代 ---
+宇多田ヒカル
+BUMP OF CHICKEN
+スピッツ
+Mr.Children
+Dreams Come True
+サザンオールスターズ
+エレファントカシマシ
+くるり
+フジファブリック
+槇原敬之
+德永英明
+福山雅治
+浜崎あゆみ
+安室奈美恵
+MISIA
+平井堅
+DEEN
+Every Little Thing
+globe
+Speed
+鈴木あみ
+華原朋美
+倉木麻衣
+Do As Infinity
+Crystal Kay
+CHEMISTRY
+絢香
+西野カナ
+コブクロ
+ゆず
+いきものがかり
+ORANGE RANGE
+斉藤和義
+秦 基博
+
+# --- ヒップホップ / R&B ---
+Dragon Ash
+KREVA
+ケツメイシ
+HOME MADE 家族
+KICK THE CAN CREW
+m-flo
+Suchmos
+在日ファンク
+
+# --- ASIAN INDIE / オルタナ ---
+ASIAN KUNG-FU GENERATION
+Perfume
+サカナクション
+東京事変
+クリープハイプ
+back number
+星野源
+
+# --- 2010年代〜現役 メジャー ---
+King Gnu
+米津玄師
+RADWIMPS
+YOASOBI
+藤井風
+あいみょん
+Mrs. GREEN APPLE
+Official髭男dism
+Vaundy
+Ado
+LiSA
+Aimer
+Reol
+imase
+Kanaria
+
+# --- 2010年代〜現役 インディー / オルタナ ---
+ずっと真夜中でいいのに。
+ヨルシカ
+Eve
+羊文学
+緑黄色社会
+マカロニえんぴつ
+ネクライトーキー
+カネコアヤノ
+Never Young Beach
+ビッケブランカ
+Omoinotake
+iri
+藤原さくら
+踊ってばかりの国
+The Novembers
+mol-74
+リュックと添い寝ごはん
+Tempalay
+tricot
+崎山蒼志
+中村佳穂
+Nulbarich
+cero
+chelmico
+yahyel
+Daoko
+Novel Core
+Tani Yuuki
+Ayase
+
+# --- アニメ / アニソン ---
+水樹奈々
+fripSide
+angela
+ClariS
+GARNiDELiA
+SawanoHiroyuki[nZk]
+鈴木このみ
+TRUE
+
+# --- ジャズ / フュージョン ---
+渡辺貞夫
+山下洋輔
+日野皓正
+菊地成孔
+上原ひろみ
+小曽根真
+大西順子

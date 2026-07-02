@@ -1,0 +1,66 @@
+name: Spotify sync
+
+on:
+  schedule:
+    # 毎日 18:00 UTC = 03:00 JST
+    - cron: "0 18 * * *"
+    # 初回一括消化用: キューが溜まっている間は1日3回追加実行
+    - cron: "0 6 * * *"   # 15:00 JST
+    - cron: "0 12 * * *"  # 21:00 JST
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: "1回あたりの同期アーティスト数（デフォルト: 50）"
+        required: false
+        default: "50"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SPOTIFY_SYNC_BATCH_SIZE: ${{ github.event.inputs.batch_size || '50' }}
+      SPOTIFY_SYNC_DELAY_MS: "3000"
+      SPOTIFY_REQUEST_INTERVAL_MS: "700"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Check required secrets
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+        run: |
+          missing=""
+          [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] && missing="$missing NEXT_PUBLIC_SUPABASE_URL"
+          [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && missing="$missing SUPABASE_SERVICE_ROLE_KEY"
+          [ -z "$SPOTIFY_CLIENT_ID" ] && missing="$missing SPOTIFY_CLIENT_ID"
+          [ -z "$SPOTIFY_CLIENT_SECRET" ] && missing="$missing SPOTIFY_CLIENT_SECRET"
+          if [ -n "$missing" ]; then
+            echo "Missing GitHub Secrets:$missing"
+            echo "Register them at Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "All required secrets are set."
+
+      - run: npm ci
+
+      - name: Enqueue artists from seeds
+        run: npm run enqueue:artists
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Sync queue batch → Supabase
+        run: node -v && npm run sync:spotify:queue
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}

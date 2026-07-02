@@ -1,0 +1,4 @@
+# name,spotify_id,priority
+# spotify_id は任意（インディーズは ID 指定推奨）。priority は大きいほど先に同期
+Example Artist,
+Another Artist,0123456789abcdef0123456789abcdef,10

@@ -1,0 +1,160 @@
+export type DbCareerEvent = {
+  year: number;
+  label: string;
+  description?: string;
+};
+
+export type DbArtist = {
+  id: string;
+  name: string;
+  name_en: string | null;
+  spotify_id: string | null;
+  origin: string;
+  active_from: number;
+  active_to: number | null;
+  genres: string[];
+  bio: string;
+  career?: DbCareerEvent[];
+  image_url: string | null;
+};
+
+export type DbAlbum = {
+  id: string;
+  title: string;
+  artist_id: string;
+  spotify_id: string | null;
+  year: number;
+  genre: string;
+  release_type: "album" | "ep" | "compilation";
+  cover_color: string;
+  cover_url: string | null;
+  tracks: unknown;
+  avg_rating: number;
+  rating_count: number;
+};
+
+export type DbReview = {
+  id: string;
+  album_id: string;
+  album_title: string;
+  artist_id: string;
+  user_id: string | null;
+  username: string;
+  rating: number;
+  rating_lyrics: number | null;
+  rating_melody: number | null;
+  rating_performance: number | null;
+  rating_atmosphere: number | null;
+  rating_completion: number | null;
+  body: string;
+  created_at: string;
+  updated_at?: string | null;
+  session_opt_out?: boolean;
+};
+
+export type DbTrackRating = {
+  id: string;
+  user_id: string;
+  album_id: string;
+  spotify_track_id: string;
+  track_number: number;
+  track_name: string;
+  rating: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbProfile = {
+  id: string;
+  username: string;
+  display_name: string | null;
+  bio: string;
+  avatar_url: string | null;
+  is_admin: boolean;
+  created_at: string;
+};
+
+export type DbDiscussionThread = {
+  id: string;
+  author_id: string;
+  title: string;
+  body: string;
+  status: "draft" | "published";
+  view_count: number;
+  review_id: string | null;
+  album_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbDiscussionPost = {
+  id: string;
+  thread_id: string;
+  anonymous_name: string;
+  body: string;
+  parent_post_id: string | null;
+  created_at: string;
+};
+
+export type DbDiscussionPollOption = {
+  id: string;
+  thread_id: string;
+  label: string;
+  position: number;
+  option_type: "text" | "album" | "artist";
+  album_id: string | null;
+  artist_id: string | null;
+  exclude_from_tally: boolean;
+  created_at: string;
+};
+
+export type DbDiscussionPollVote = {
+  id: string;
+  thread_id: string;
+  option_id: string;
+  voter_key: string;
+  created_at: string;
+};
+
+export type DbReviewComment = {
+  id: string;
+  review_id: string;
+  author_id: string | null;
+  anonymous_name: string;
+  body: string;
+  parent_comment_id: string | null;
+  created_at: string;
+};
+
+export type DbReviewReaction = {
+  id: string;
+  review_id: string;
+  user_id: string | null;
+  voter_key: string | null;
+  reaction: "good" | "bad";
+  created_at: string;
+};
+
+export type DbDiscussionPostReaction = {
+  id: string;
+  post_id: string;
+  user_id: string | null;
+  voter_key: string | null;
+  reaction: "good" | "bad";
+  created_at: string;
+};
+
+export type DbContentReport = {
+  id: string;
+  target_type: "discussion_post" | "review" | "review_comment";
+  target_id: string;
+  reporter_user_id: string | null;
+  reporter_voter_key: string | null;
+  reason: "spam" | "harassment" | "inappropriate" | "other";
+  details: string | null;
+  status: "pending" | "resolved" | "dismissed";
+  resolution: "deleted" | "dismissed" | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  created_at: string;
+};
