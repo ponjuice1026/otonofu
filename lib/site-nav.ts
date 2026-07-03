@@ -19,6 +19,11 @@ export const HEADER_NAV_ITEMS: SiteNavItem[] = [
     match: (path) => path.startsWith("/albums"),
   },
   {
+    href: "/genres",
+    label: "ジャンル",
+    match: (path) => path.startsWith("/genres"),
+  },
+  {
     href: "/charts",
     label: "ランキング",
     match: (path) => path.startsWith("/charts"),

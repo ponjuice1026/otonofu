@@ -153,3 +153,82 @@ export type ReviewComment = {
   replyIndices: number[];
   createdAt: string;
 };
+
+export type UserListItem = {
+  id: string;
+  listId: string;
+  albumId: string;
+  position: number;
+  note?: string;
+  /** アルバム情報（データ層で解決） */
+  albumTitle: string;
+  artistId: string;
+  artistName: string;
+  year: number;
+  coverUrl?: string;
+  coverColor: string;
+  spotifyId?: string;
+};
+
+export type UserList = {
+  id: string;
+  authorId: string;
+  authorName: string;
+  title: string;
+  description?: string;
+  isPublic: boolean;
+  itemCount: number;
+  /** カバーコラージュ用の先頭数件（一覧カード表示用） */
+  coverItems: {
+    albumId: string;
+    coverUrl?: string;
+    coverColor: string;
+    spotifyId?: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
+  /** 詳細取得時のみ埋まる。一覧では空配列 */
+  items: UserListItem[];
+};
+
+export type ContributionKind = "add_artist" | "add_album" | "fix_data";
+
+export type ContributionStatus = "pending" | "approved" | "rejected";
+
+export type ContributionRequest = {
+  id: string;
+  requesterId: string;
+  kind: ContributionKind;
+  targetArtistId: string | null;
+  targetAlbumId: string | null;
+  payload: Record<string, unknown>;
+  status: ContributionStatus;
+  adminNote: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+};
+
+export type NotificationType =
+  | "thread_reply"
+  | "post_reply"
+  | "review_comment"
+  | "comment_reply"
+  | "reaction"
+  | "follow"
+  | "contribution";
+
+export type Notification = {
+  id: string;
+  type: NotificationType;
+  actorName: string;
+  /** 通知の発生源ユーザーID。フォロー通知の遷移先解決に使う（無ければ null） */
+  actorId: string | null;
+  threadId: string | null;
+  reviewId: string | null;
+  postId: string | null;
+  commentId: string | null;
+  readAt: string | null;
+  createdAt: string;
+  /** 遷移先URL（データ層で解決） */
+  href: string;
+};

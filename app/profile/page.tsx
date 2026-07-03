@@ -5,9 +5,11 @@ import { logout } from "@/app/login/actions";
 import { AvatarUploader } from "@/components/profile/AvatarUploader";
 import { ProfileExpandableSection } from "@/components/profile/ProfileExpandableSection";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
+import { MyContributionsList } from "@/components/contribute/MyContributionsList";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { ensureProfile } from "@/lib/auth/profile";
 import { getUser } from "@/lib/auth/session";
+import { getMyContributions } from "@/lib/data/contributions";
 import { getUserProfileStats } from "@/lib/data/profile-stats";
 import { getReviewReactionStates } from "@/lib/data/reactions";
 import { getReviewCommentCounts } from "@/lib/data/review-comments";
@@ -56,10 +58,11 @@ export default async function ProfilePage() {
     );
   }
 
-  const [stats, myReviews, myThreads] = await Promise.all([
+  const [stats, myReviews, myThreads, myContributions] = await Promise.all([
     getUserProfileStats(user.id),
     getReviewsByUserId(user.id),
     getDiscussionThreadsByAuthorId(user.id),
+    getMyContributions(user.id),
   ]);
 
   const reviewIds = myReviews.map((r) => r.id);
@@ -250,6 +253,14 @@ export default async function ProfilePage() {
             </Link>
           </p>
         )}
+      </ProfileExpandableSection>
+
+      <ProfileExpandableSection
+        id="my-contributions"
+        title="データ申請"
+        count={myContributions.length}
+      >
+        <MyContributionsList contributions={myContributions} />
       </ProfileExpandableSection>
 
       <footer className="mt-10 border-t border-[var(--border)] pt-8 pb-4">

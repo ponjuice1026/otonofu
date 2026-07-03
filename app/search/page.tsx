@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SearchForm } from "@/components/search/SearchForm";
 import { SearchResults } from "@/components/search/SearchResults";
 import { searchCatalog, siteSearchTotal } from "@/lib/data/search";
@@ -35,9 +36,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           探したい言葉を入力して検索してください。
         </p>
       ) : total === 0 ? (
-        <p className="empty-state">
-          「{query}」に一致する結果は見つかりませんでした。
-        </p>
+        <div className="empty-state">
+          <p>「{query}」に一致する結果は見つかりませんでした。</p>
+          <p className="mt-3 text-sm">
+            <Link
+              href={`/contribute?type=add_album&q=${encodeURIComponent(query)}`}
+              className="link-accent hover:underline"
+            >
+              見つからない作品の追加をリクエストする →
+            </Link>
+          </p>
+        </div>
       ) : (
         <SearchResults query={query} results={results!} />
       )}

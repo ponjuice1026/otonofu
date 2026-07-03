@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AdminContributionRowItem } from "@/components/admin/AdminContributionRow";
 import { AdminReportRowItem } from "@/components/admin/AdminReportRow";
 import { AdminThreadRowItem } from "@/components/admin/AdminThreadRow";
 import { AdminUserRowItem } from "@/components/admin/AdminUserRow";
@@ -10,6 +11,7 @@ import {
   getAdminUsers,
 } from "@/lib/data/admin";
 import { getAdminReports } from "@/lib/data/reports";
+import { getPendingContributions } from "@/lib/data/contributions";
 import { pageTitle } from "@/lib/site";
 
 export const metadata = {
@@ -26,15 +28,17 @@ export default async function AdminPage() {
   const admin = await isCurrentUserAdmin();
   if (!admin) redirect("/");
 
-  const [stats, threads, users, reports] = await Promise.all([
+  const [stats, threads, users, reports, contributions] = await Promise.all([
     getAdminStats(),
     getAdminThreads(50),
     getAdminUsers(100),
     getAdminReports(50),
+    getPendingContributions(50),
   ]);
 
   const statCards: { label: string; value: number }[] = [
     { label: "未処理の通報", value: stats.pendingReports },
+    { label: "未処理の申請", value: contributions.length },
     { label: "セッション", value: stats.totalThreads },
     { label: "コメント", value: stats.totalPosts },
     { label: "投票", value: stats.totalVotes },
@@ -55,7 +59,7 @@ export default async function AdminPage() {
       </header>
 
       <section className="mb-10">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
           {statCards.map((card) => (
             <div
               key={card.label}
@@ -99,6 +103,48 @@ export default async function AdminPage() {
               ) : (
                 reports.map((report) => (
                   <AdminReportRowItem key={report.id} report={report} />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="mb-10">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold text-zinc-100">データ申請キュー</h2>
+          <p className="text-xs text-zinc-500">未処理 {contributions.length} 件</p>
+        </div>
+        <p className="mb-3 text-xs text-zinc-500">
+          ユーザーからの追加・修正リクエスト。承認/却下でステータスを更新します。
+          実データへの反映は SQL または scripts で別途対応してください。
+        </p>
+        <div className="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-900/30">
+          <table className="min-w-full text-left">
+            <thead className="text-xs text-zinc-500">
+              <tr className="border-b border-zinc-800">
+                <th className="px-3 py-2 font-medium">内容</th>
+                <th className="px-3 py-2 font-medium">申請者</th>
+                <th className="px-3 py-2 font-medium">日時</th>
+                <th className="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contributions.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-3 py-6 text-center text-sm text-zinc-500"
+                  >
+                    未処理の申請はありません。
+                  </td>
+                </tr>
+              ) : (
+                contributions.map((contribution) => (
+                  <AdminContributionRowItem
+                    key={contribution.id}
+                    contribution={contribution}
+                  />
                 ))
               )}
             </tbody>

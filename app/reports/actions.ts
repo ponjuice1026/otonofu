@@ -13,6 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getOrCreateVoterKey } from "@/lib/threads/voter";
+import { checkRateLimit, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
 
 export type ReportActionState = {
   error?: string;
@@ -70,6 +71,9 @@ export async function submitContentReport(
   const targetType = targetTypeRaw as ContentReportTargetType;
   const reason = reasonRaw as ContentReportReason;
   const details = normalizeDetails(detailsRaw);
+
+  const allowed = await checkRateLimit("report");
+  if (!allowed) return { error: RATE_LIMIT_MESSAGE };
 
   const supabase = await createClient();
   const user = await getUser();

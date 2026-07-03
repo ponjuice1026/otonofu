@@ -29,6 +29,7 @@ import {
   HOME_TRENDING_POOL_SIZE,
   pickHomeTrendingThreadFeed,
 } from "@/lib/threads/home-feed";
+import { getFollowingRecentReviews } from "@/lib/data/follows";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,7 @@ export default async function Home({ searchParams }: HomeProps) {
     homeReviews,
     homeThreads,
     recommendedThreads,
+    followingReviews,
   ] = await Promise.all([
     getTopRatedAlbums(10),
     reviewMode === "newest"
@@ -84,6 +86,7 @@ export default async function Home({ searchParams }: HomeProps) {
       ? getDiscussionThreadsPage(1, HOME_THREADS_LIMIT, "newest")
       : getTrendingThreads(HOME_TRENDING_POOL_SIZE),
     user ? getRecommendedThreadsForUser(user.id, 5) : Promise.resolve([]),
+    user ? getFollowingRecentReviews(user.id, 6) : Promise.resolve([]),
   ]);
 
   const recommendedThreadIds = new Set(recommendedThreads.map((t) => t.id));
@@ -142,6 +145,7 @@ export default async function Home({ searchParams }: HomeProps) {
       ...standaloneReviews.map((review) => review.id),
       ...homeThreadFeed.reviewSessions.map((review) => review.id),
       ...recommendedSessionReviews.map((review) => review.id),
+      ...followingReviews.map((review) => review.id),
     ]),
   ];
   const [reviewReactions, reviewCommentCounts] = await Promise.all([
@@ -156,6 +160,7 @@ export default async function Home({ searchParams }: HomeProps) {
       ...standaloneReviews.map((review) => review.artistId),
       ...homeThreadFeed.reviewSessions.map((review) => review.artistId),
       ...recommendedSessionReviews.map((review) => review.artistId),
+      ...followingReviews.map((review) => review.artistId),
     ]),
   ];
   const reviewAlbumIds = [
@@ -163,6 +168,7 @@ export default async function Home({ searchParams }: HomeProps) {
       ...standaloneReviews.map((review) => review.albumId),
       ...homeThreadFeed.reviewSessions.map((review) => review.albumId),
       ...recommendedSessionReviews.map((review) => review.albumId),
+      ...followingReviews.map((review) => review.albumId),
       ...homeThreadFeed.regularThreads
         .map((thread) => thread.albumId)
         .filter((id): id is string => Boolean(id)),
@@ -300,6 +306,39 @@ export default async function Home({ searchParams }: HomeProps) {
             reviewReactions={reviewReactions}
             reviewCommentCounts={reviewCommentCounts}
           />
+        </section>
+      )}
+
+      {user && followingReviews.length > 0 && (
+        <section className="home-section mb-14">
+          <div className="section-header">
+            <div>
+              <h2 className="section-title section-title-accent section-accent-emerald">
+                フォロー中のユーザーの新着レビュー
+              </h2>
+              <p className="section-desc">
+                あなたがフォローしているユーザーの最近のレビュー
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {followingReviews.map((review) => {
+              const { albumCoverUrl, albumCoverColor } =
+                buildReviewCardCoverProps(review.albumId, albumCovers);
+
+              return (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  showAlbumCover
+                  albumCoverUrl={albumCoverUrl}
+                  albumCoverColor={albumCoverColor}
+                  reactionState={reviewReactions.get(review.id)}
+                  commentCount={reviewCommentCounts.get(review.id) ?? 0}
+                />
+              );
+            })}
+          </div>
         </section>
       )}
 

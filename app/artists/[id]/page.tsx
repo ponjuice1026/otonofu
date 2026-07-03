@@ -7,8 +7,9 @@ import { OtherReleasesSection } from "@/components/artist/OtherReleasesSection";
 import { splitArtistDiscography } from "@/lib/albums/discography";
 import { getAlbumsByArtistId } from "@/lib/data/albums";
 import { getArtistById } from "@/lib/data/artists";
+import { findGenreForLabel } from "@/lib/genres";
 import { artistImageSrc } from "@/lib/covers";
-import { pageTitle } from "@/lib/site";
+import { pageTitle, siteUrl } from "@/lib/site";
 
 function resolveArtistBackLink(
   referer: string | null,
@@ -49,8 +50,8 @@ export async function generateMetadata({ params }: PageProps) {
     };
   }
 
-  const title = pageTitle(artist.name);
-  const description = `${artist.name}のアーティストページ。ディスコグラフィとレビューをチェックできる。`;
+  const title = pageTitle(`${artist.name} のレビュー・評価`);
+  const description = `${artist.name}のアーティストページ。ディスコグラフィとレビュー・評価をチェックできる。オトノフで感想を共有しよう。`;
   const imageSrc = artistImageSrc(artist);
 
   return {
@@ -59,7 +60,18 @@ export async function generateMetadata({ params }: PageProps) {
     openGraph: {
       title,
       description,
+      type: "profile",
+      url: siteUrl(`/artists/${artist.id}`),
       images: imageSrc ? [{ url: imageSrc }] : undefined,
+    },
+    twitter: {
+      card: imageSrc ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: imageSrc ? [imageSrc] : undefined,
+    },
+    alternates: {
+      canonical: siteUrl(`/artists/${artist.id}`),
     },
   };
 }
@@ -85,8 +97,30 @@ export default async function ArtistDetailPage({ params }: PageProps) {
     ? `${artist.activeFrom}–${artist.activeTo}`
     : `${artist.activeFrom}–`;
 
+  const absoluteImage = imageSrc
+    ? imageSrc.startsWith("http")
+      ? imageSrc
+      : siteUrl(imageSrc)
+    : undefined;
+
+  const artistJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MusicGroup",
+    name: artist.name,
+    ...(artist.nameEn ? { alternateName: artist.nameEn } : {}),
+    url: siteUrl(`/artists/${artist.id}`),
+    ...(absoluteImage ? { image: absoluteImage } : {}),
+    ...(artist.origin ? { foundingLocation: artist.origin } : {}),
+    ...(artist.genres.length > 0 ? { genre: artist.genres } : {}),
+    ...(artist.bio ? { description: artist.bio } : {}),
+  };
+
   return (
     <div className="page-shell">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(artistJsonLd) }}
+      />
       <Link href={backLink.href} className="link-accent mb-6 inline-block text-sm hover:underline">
         {backLink.label}
       </Link>
@@ -123,7 +157,26 @@ export default async function ArtistDetailPage({ params }: PageProps) {
               </div>
               <div>
                 <dt className="inline text-[var(--muted)]">ジャンル </dt>
-                <dd className="inline">{artist.genres.join("、")}</dd>
+                <dd className="inline">
+                  {artist.genres.map((g, i) => {
+                    const genre = findGenreForLabel(g);
+                    return (
+                      <span key={`${g}-${i}`}>
+                        {i > 0 ? "、" : ""}
+                        {genre ? (
+                          <Link
+                            href={`/genres/${genre.slug}`}
+                            className="link-accent hover:underline"
+                          >
+                            {g}
+                          </Link>
+                        ) : (
+                          g
+                        )}
+                      </span>
+                    );
+                  })}
+                </dd>
               </div>
             </dl>
             {spotifyUrl && (
@@ -136,6 +189,14 @@ export default async function ArtistDetailPage({ params }: PageProps) {
                 Spotify で開く →
               </a>
             )}
+            <div className="mt-3">
+              <Link
+                href={`/contribute?type=fix&artist=${artist.id}`}
+                className="inline-block text-xs text-[var(--muted)] hover:text-amber-300 hover:underline"
+              >
+                このアーティストの情報の修正を依頼 →
+              </Link>
+            </div>
           </div>
         </div>
       </header>

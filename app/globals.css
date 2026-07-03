@@ -510,6 +510,10 @@ body {
   --section-accent: linear-gradient(180deg, #67e8f9, #38bdf8);
 }
 
+.section-accent-emerald {
+  --section-accent: linear-gradient(180deg, #6ee7b7, #34d399);
+}
+
 .font-display {
   font-family: var(--font-display);
   letter-spacing: -0.02em;

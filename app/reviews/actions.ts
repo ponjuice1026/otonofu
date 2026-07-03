@@ -10,6 +10,9 @@ import {
   normalizePostBody,
   validatePostBody,
 } from "@/lib/threads/validate";
+import { createNotification } from "@/lib/data/notify";
+import { checkRateLimit, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
+import { checkContent } from "@/lib/moderation";
 
 export type ReviewCommentActionState = {
   error?: string;
@@ -37,14 +40,23 @@ export async function createReviewComment(
   const bodyError = validatePostBody(bodyRaw);
   if (bodyError) return { error: bodyError };
 
+  const moderationError = checkContent(bodyRaw);
+  if (moderationError) return { error: moderationError };
+
+  const allowed = await checkRateLimit("review_comment", {
+    dedupBody: normalizePostBody(bodyRaw),
+  });
+  if (!allowed) return { error: RATE_LIMIT_MESSAGE };
+
   const supabase = await createClient();
   const user = await getUser();
 
   let parentCommentId: string | null = null;
+  let parentAuthorId: string | null = null;
   if (parentRaw) {
     const { data: parent, error: parentError } = await supabase
       .from("review_comments")
-      .select("id, review_id")
+      .select("id, review_id, author_id")
       .eq("id", parentRaw)
       .maybeSingle();
 
@@ -52,18 +64,54 @@ export async function createReviewComment(
       return { error: "返信先のコメントが見つかりません。" };
     }
     parentCommentId = parent.id;
+    parentAuthorId = parent.author_id ?? null;
   }
 
-  const { error } = await supabase.from("review_comments").insert({
-    review_id: reviewId,
-    author_id: user?.id ?? null,
-    anonymous_name: normalizeAnonymousName(nameRaw),
-    body: normalizePostBody(bodyRaw),
-    parent_comment_id: parentCommentId,
-  });
+  const actorName = normalizeAnonymousName(nameRaw);
+  const { data: inserted, error } = await supabase
+    .from("review_comments")
+    .insert({
+      review_id: reviewId,
+      author_id: user?.id ?? null,
+      anonymous_name: actorName,
+      body: normalizePostBody(bodyRaw),
+      parent_comment_id: parentCommentId,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.message };
+  }
+
+  // 通知: レビュー投稿者へ。返信の場合は親コメント投稿者へも。
+  // 宛先未解決（匿名 author_id null）・自分自身宛は関数側でスキップ。
+  try {
+    const { data: review } = await supabase
+      .from("reviews")
+      .select("user_id")
+      .eq("id", reviewId)
+      .maybeSingle();
+
+    await createNotification({
+      targetUserId: review?.user_id ?? null,
+      type: "review_comment",
+      actorName,
+      reviewId,
+      commentId: inserted?.id ?? null,
+    });
+
+    if (parentAuthorId && parentAuthorId !== review?.user_id) {
+      await createNotification({
+        targetUserId: parentAuthorId,
+        type: "comment_reply",
+        actorName,
+        reviewId,
+        commentId: inserted?.id ?? null,
+      });
+    }
+  } catch (notifyErr) {
+    console.error("[notify] createReviewComment:", notifyErr);
   }
 
   if (albumId) {

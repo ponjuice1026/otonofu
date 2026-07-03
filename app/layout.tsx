@@ -5,7 +5,7 @@ import { DataSourceBanner } from "@/components/layout/DataSourceBanner";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { SiteBackdrop } from "@/components/layout/SiteBackdrop";
-import { pageTitle, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import { pageTitle, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const zenKaku = Zen_Kaku_Gothic_New({
@@ -23,8 +23,14 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: pageTitle(),
   description: SITE_DESCRIPTION,
+  alternates: {
+    types: {
+      "application/rss+xml": "/feed.xml",
+    },
+  },
   openGraph: {
     siteName: SITE_NAME,
     type: "website",

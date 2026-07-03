@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlbumCover } from "@/components/spotify/AlbumCover";
 import { AlbumReviewForm } from "@/components/review/AlbumReviewForm";
+import { AddToListDropdown } from "@/components/list/AddToListDropdown";
 import { TrackRatingList } from "@/components/review/TrackRatingList";
 import { ArtistLink } from "@/components/artist/ArtistLink";
 import { ReviewCard } from "@/components/review/ReviewCard";
@@ -10,17 +11,19 @@ import { StarRating } from "@/components/ui/StarRating";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { getUser } from "@/lib/auth/session";
 import { getAlbumById, getReleaseTypeLabel } from "@/lib/data/albums";
+import { findGenreForLabel } from "@/lib/genres";
 import { albumCoverSrc } from "@/lib/covers";
 import { getArtistById } from "@/lib/data/artists";
 import { getReviewReactionStates } from "@/lib/data/reactions";
 import { getReviewCommentsForReviews } from "@/lib/data/review-comments";
 import { getReviewsByAlbumId, getUserReviewForAlbum } from "@/lib/data/reviews";
+import { getOwnListsForAlbum } from "@/lib/data/lists";
 import {
   getTrackRatingAveragesForAlbum,
   getUserTrackRatingsForAlbum,
 } from "@/lib/data/track-ratings";
 import { getAlbumTracksFromDb } from "@/lib/data/tracks";
-import { pageTitle } from "@/lib/site";
+import { pageTitle, siteUrl } from "@/lib/site";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -69,8 +72,16 @@ export async function generateMetadata({
 
   const artist = await getArtistById(album.artistId);
   const artistName = artist?.name ?? "";
-  const title = pageTitle(album.title);
-  const description = `${artistName}のアルバム『${album.title}』のレビューと評価`;
+  const title = pageTitle(
+    artistName
+      ? `${album.title} - ${artistName} のレビュー・評価`
+      : `${album.title} のレビュー・評価`,
+  );
+  const ratingText =
+    album.ratingCount > 0
+      ? `平均評価 ${album.avgRating.toFixed(1)}/10・${album.ratingCount.toLocaleString("ja-JP")}件のレビュー。`
+      : "まだレビューはありません。";
+  const description = `${artistName ? `${artistName}の` : ""}アルバム『${album.title}』のレビューと評価。${ratingText}オトノフで感想を共有しよう。`;
   const coverUrl = albumCoverSrc(album);
 
   return {
@@ -79,7 +90,18 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
+      type: "music.album",
+      url: siteUrl(`/albums/${album.id}`),
       images: coverUrl ? [{ url: coverUrl }] : undefined,
+    },
+    twitter: {
+      card: coverUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: coverUrl ? [coverUrl] : undefined,
+    },
+    alternates: {
+      canonical: siteUrl(`/albums/${album.id}`),
     },
   };
 }
@@ -104,14 +126,21 @@ export default async function AlbumDetailPage({
   const referer = (await headers()).get("referer");
   const backLink = resolveBackLink(from, referer, album.artistId, artistName);
 
-  const [reviews, userReview, userTrackRatings, trackAverages, isAdmin] =
-    await Promise.all([
-      getReviewsByAlbumId(id),
-      user ? getUserReviewForAlbum(user.id, id) : Promise.resolve(null),
-      user ? getUserTrackRatingsForAlbum(user.id, id) : Promise.resolve(new Map()),
-      getTrackRatingAveragesForAlbum(id),
-      isCurrentUserAdmin(),
-    ]);
+  const [
+    reviews,
+    userReview,
+    userTrackRatings,
+    trackAverages,
+    isAdmin,
+    ownLists,
+  ] = await Promise.all([
+    getReviewsByAlbumId(id),
+    user ? getUserReviewForAlbum(user.id, id) : Promise.resolve(null),
+    user ? getUserTrackRatingsForAlbum(user.id, id) : Promise.resolve(new Map()),
+    getTrackRatingAveragesForAlbum(id),
+    isCurrentUserAdmin(),
+    user ? getOwnListsForAlbum(user.id, id) : Promise.resolve([]),
+  ]);
 
   const reviewIds = reviews.map((r) => r.id);
   const [reactionMap, commentsByReview] = await Promise.all([
@@ -126,8 +155,50 @@ export default async function AlbumDetailPage({
   const userRatingsObject = Object.fromEntries(userTrackRatings);
   const communityAveragesObject = Object.fromEntries(trackAverages);
 
+  const coverUrl = albumCoverSrc(album);
+  const absoluteCover = coverUrl
+    ? coverUrl.startsWith("http")
+      ? coverUrl
+      : siteUrl(coverUrl)
+    : undefined;
+
+  const albumJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MusicAlbum",
+    name: album.title,
+    url: siteUrl(`/albums/${album.id}`),
+    ...(absoluteCover ? { image: absoluteCover } : {}),
+    ...(artistName
+      ? {
+          byArtist: {
+            "@type": "MusicGroup",
+            name: artistName,
+            "@id": siteUrl(`/artists/${album.artistId}`),
+            url: siteUrl(`/artists/${album.artistId}`),
+          },
+        }
+      : {}),
+    datePublished: String(album.year),
+    genre: album.genre,
+    ...(album.ratingCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: album.avgRating.toFixed(1),
+            bestRating: 10,
+            worstRating: 0,
+            ratingCount: album.ratingCount,
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="page-shell">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(albumJsonLd) }}
+      />
       <Link
         href={backLink.href}
         className="link-accent mb-6 inline-block text-sm hover:underline"
@@ -143,7 +214,20 @@ export default async function AlbumDetailPage({
         />
         <div className="flex-1">
           <p className="text-sm text-[var(--muted)]">
-            {album.year} · {getReleaseTypeLabel(album.type)} · {album.genre}
+            {album.year} · {getReleaseTypeLabel(album.type)} ·{" "}
+            {(() => {
+              const genre = findGenreForLabel(album.genre);
+              return genre ? (
+                <Link
+                  href={`/genres/${genre.slug}`}
+                  className="link-accent hover:underline"
+                >
+                  {album.genre}
+                </Link>
+              ) : (
+                album.genre
+              );
+            })()}
             {tracks.length > 0 ? ` · ${tracks.length} 曲` : ""}
           </p>
           <h1 className="mt-1 text-3xl font-bold text-[var(--foreground)]">{album.title}</h1>
@@ -172,6 +256,21 @@ export default async function AlbumDetailPage({
               Spotify で開く →
             </a>
           )}
+
+          <div className="mt-4">
+            <AddToListDropdown
+              albumId={album.id}
+              isLoggedIn={Boolean(user)}
+              lists={ownLists}
+            />
+          </div>
+
+          <Link
+            href={`/contribute?type=fix&album=${album.id}`}
+            className="mt-3 inline-block text-xs text-[var(--muted)] hover:text-amber-300 hover:underline"
+          >
+            このアルバムの情報の修正を依頼 →
+          </Link>
 
           <AlbumReviewForm
             albumId={album.id}

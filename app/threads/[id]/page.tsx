@@ -18,9 +18,10 @@ import {
 } from "@/lib/data/threads";
 import { getReviewForSessionThread } from "@/lib/data/reviews";
 import { buildReviewCardCoverProps } from "@/lib/reviews/review-card-cover";
+import { UserLink } from "@/components/user/UserLink";
 import { formatThreadDate } from "@/lib/threads/format";
 import { profilePostName } from "@/lib/threads/validate";
-import { pageTitle } from "@/lib/site";
+import { pageTitle, siteUrl } from "@/lib/site";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -49,6 +50,16 @@ export async function generateMetadata({ params }: PageProps) {
     openGraph: {
       title,
       description,
+      type: "article",
+      url: siteUrl(`/threads/${thread.id}`),
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+    alternates: {
+      canonical: siteUrl(`/threads/${thread.id}`),
     },
   };
 }
@@ -126,7 +137,13 @@ export default async function ThreadDetailPage({ params }: PageProps) {
             hideSessionLink
           />
           <p className="mt-3 text-xs text-zinc-500">
-            作成者 {thread.authorName} · {formatThreadDate(thread.createdAt)} ·
+            作成者{" "}
+            <UserLink
+              userId={thread.authorId}
+              name={thread.authorName}
+              className="text-zinc-400 transition hover:text-zinc-200"
+            />{" "}
+            · {formatThreadDate(thread.createdAt)} ·
             閲覧 {thread.viewCount.toLocaleString("ja-JP")} · 返信{" "}
             {thread.postCount}
           </p>
@@ -156,7 +173,13 @@ export default async function ThreadDetailPage({ params }: PageProps) {
             {thread.body}
           </p>
           <p className="mt-4 text-xs text-zinc-500">
-            作成者 {thread.authorName} · {formatThreadDate(thread.createdAt)} ·
+            作成者{" "}
+            <UserLink
+              userId={thread.authorId}
+              name={thread.authorName}
+              className="text-zinc-400 transition hover:text-zinc-200"
+            />{" "}
+            · {formatThreadDate(thread.createdAt)} ·
             閲覧 {thread.viewCount.toLocaleString("ja-JP")} · 返信{" "}
             {thread.postCount}
           </p>

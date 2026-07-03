@@ -26,6 +26,9 @@ import {
 import { getOrCreateVoterKey, getVoterKey } from "@/lib/threads/voter";
 import { registerThreadParticipant } from "@/lib/data/poll-participants";
 import { buildViewOnlyPollOptionInput } from "@/lib/threads/poll-defaults";
+import { createNotification } from "@/lib/data/notify";
+import { checkRateLimit, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
+import { checkContent } from "@/lib/moderation";
 
 export type ThreadActionState = {
   error?: string;
@@ -149,6 +152,18 @@ export async function saveDiscussionThread(
             error: `選択肢は${POLL_OPTION_MAX_COUNT}つまでです。結果閲覧用を付ける場合は集計対象の選択肢を減らしてください。`,
           };
         }
+      }
+
+      // モデレーション（本文の構造的スパム検査）
+      const moderationError = checkContent(bodyRaw);
+      if (moderationError) return { error: moderationError };
+
+      // レート制限（新規作成の公開時のみ。既存下書きの編集公開は threadId 有り）
+      if (!threadId) {
+        const allowed = await checkRateLimit("thread_create", {
+          dedupBody: normalizeThreadBody(bodyRaw),
+        });
+        if (!allowed) return { error: RATE_LIMIT_MESSAGE };
       }
     }
 
@@ -289,6 +304,14 @@ export async function createDiscussionPost(
   const bodyError = validatePostBody(bodyRaw);
   if (bodyError) return { error: bodyError };
 
+  const moderationError = checkContent(bodyRaw);
+  if (moderationError) return { error: moderationError };
+
+  const allowed = await checkRateLimit("post_create", {
+    dedupBody: normalizePostBody(bodyRaw),
+  });
+  if (!allowed) return { error: RATE_LIMIT_MESSAGE };
+
   const supabase = await createClient();
   const user = await getUser();
 
@@ -317,18 +340,45 @@ export async function createDiscussionPost(
     parentPostId = parent.id;
   }
 
-  const { error } = await supabase.from("discussion_posts").insert({
-    thread_id: threadId,
-    anonymous_name: displayName,
-    body: normalizePostBody(bodyRaw),
-    parent_post_id: parentPostId,
-  });
+  const { data: inserted, error } = await supabase
+    .from("discussion_posts")
+    .insert({
+      thread_id: threadId,
+      anonymous_name: displayName,
+      body: normalizePostBody(bodyRaw),
+      parent_post_id: parentPostId,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.message };
   }
 
   await registerThreadParticipant(threadId);
+
+  // スレ主へ通知（匿名投稿者=author_id null は関数側/宛先未解決でスキップ）。
+  // discussion_posts に投稿者IDは無いため、返信先投稿者への通知は解決不可。
+  // スレッド作成者宛の通知のみ発生させる（自分自身宛は関数側でスキップ）。
+  try {
+    const { data: thread } = await supabase
+      .from("discussion_threads")
+      .select("author_id")
+      .eq("id", threadId)
+      .maybeSingle();
+
+    if (thread?.author_id) {
+      await createNotification({
+        targetUserId: thread.author_id,
+        type: parentPostId ? "post_reply" : "thread_reply",
+        actorName: displayName,
+        threadId,
+        postId: inserted?.id ?? null,
+      });
+    }
+  } catch (notifyErr) {
+    console.error("[notify] createDiscussionPost:", notifyErr);
+  }
 
   revalidatePath(`/threads/${threadId}`);
   revalidatePath("/threads");
@@ -361,6 +411,9 @@ export async function voteDiscussionPoll(
   if (optionError || !option) {
     return { error: "選択肢が見つかりません。" };
   }
+
+  const allowed = await checkRateLimit("reaction");
+  if (!allowed) return { error: RATE_LIMIT_MESSAGE };
 
   const voterKey = await getOrCreateVoterKey();
   const { error } = await supabase.from("discussion_poll_votes").insert({
@@ -422,6 +475,14 @@ export async function addDiscussionPollOption(
   const pollOptions = parsePollOptionsFromFormData(formData);
   const pollError = validatePollOptionAdd(pollOptions);
   if (pollError) return { error: pollError };
+
+  const moderationError = checkContent(pollOptions[0]?.label ?? "");
+  if (moderationError) return { error: moderationError };
+
+  const allowed = await checkRateLimit("post_create", {
+    dedupBody: pollOptions[0]?.label ?? undefined,
+  });
+  if (!allowed) return { error: RATE_LIMIT_MESSAGE };
 
   const participantKey = await getVoterKey();
   if (!participantKey) {

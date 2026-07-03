@@ -1,4 +1,5 @@
 import { HeaderAuth } from "@/components/layout/HeaderAuth";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { Logo } from "@/components/layout/Logo";
 import { NavLinks } from "@/components/layout/NavLinks";
 import { SearchAutocomplete } from "@/components/layout/SearchAutocomplete";
@@ -27,6 +28,7 @@ export function Header() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <ThreadCreateLink />
+              <NotificationBell />
               <HeaderAuth />
             </div>
           </div>

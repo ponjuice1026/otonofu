@@ -6,6 +6,7 @@ import { CriteriaRatingsSummary } from "@/components/review/CriteriaRatingsSumma
 import { ReviewCommentsSection } from "@/components/review/ReviewCommentsSection";
 import { AlbumCover } from "@/components/spotify/AlbumCover";
 import { ExpandableText } from "@/components/ui/ExpandableText";
+import { UserLink } from "@/components/user/UserLink";
 import { criteriaFromReview } from "@/lib/ratings";
 import type { ReactionState, Review, ReviewComment } from "@/lib/types";
 
@@ -85,9 +86,11 @@ export function ReviewCard({
           ) : (
             <div className="mb-2 flex items-start justify-between gap-3">
               <div className="flex items-center gap-3 text-xs text-neutral-500">
-                <span className="font-medium text-neutral-300">
-                  {review.username}
-                </span>
+                <UserLink
+                  userId={review.userId}
+                  name={review.username}
+                  className="font-medium text-neutral-300 transition hover:text-white"
+                />
                 <time dateTime={review.createdAt}>{review.createdAt}</time>
               </div>
               <CriteriaRatingsSummary
@@ -100,9 +103,11 @@ export function ReviewCard({
           )}
           {showAlbumTitle && (
             <div className="flex items-center gap-3 text-xs text-neutral-500">
-              <span className="font-medium text-neutral-300">
-                {review.username}
-              </span>
+              <UserLink
+                userId={review.userId}
+                name={review.username}
+                className="font-medium text-neutral-300 transition hover:text-white"
+              />
               <time dateTime={review.createdAt}>{review.createdAt}</time>
             </div>
           )}

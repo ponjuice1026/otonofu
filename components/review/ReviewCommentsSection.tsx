@@ -15,6 +15,7 @@ import {
   type ReviewCommentActionState,
 } from "@/app/reviews/actions";
 import { ReportButton } from "@/components/report/ReportButton";
+import { UserLink } from "@/components/user/UserLink";
 import { formatThreadDate } from "@/lib/threads/format";
 import type { ReviewComment } from "@/lib/types";
 
@@ -112,7 +113,12 @@ export function ReviewCommentsSection({
                     <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs">
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                         <span className="font-medium text-zinc-300">
-                          #{comment.index} {comment.anonymousName}
+                          #{comment.index}{" "}
+                          <UserLink
+                            userId={comment.authorId}
+                            name={comment.anonymousName}
+                            className="transition hover:text-white"
+                          />
                         </span>
                         <time className="text-zinc-500">
                           {formatThreadDate(comment.createdAt)}

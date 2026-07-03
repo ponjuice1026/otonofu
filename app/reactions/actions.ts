@@ -5,11 +5,17 @@ import { getUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getOrCreateVoterKey } from "@/lib/threads/voter";
+import { createNotification } from "@/lib/data/notify";
+import { ensureProfile } from "@/lib/auth/profile";
+import { profilePostName } from "@/lib/threads/validate";
+import { checkRateLimit, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
 import type { ReactionKind } from "@/lib/types";
 
 type ReactionResult = {
   error?: string;
   success?: string;
+  /** good リアクションが新規に付与された場合 true（通知判定用） */
+  goodAdded?: boolean;
 };
 
 type TargetType = "review" | "post";
@@ -36,13 +42,15 @@ async function toggleReaction(
   if (!isSupabaseConfigured()) {
     return { error: "Supabase が未設定です。" };
   }
-
   if (!targetId) {
     return { error: "対象が指定されていません。" };
   }
   if (!isValidReaction(reaction)) {
     return { error: "リアクションが不正です。" };
   }
+
+  const allowed = await checkRateLimit("reaction");
+  if (!allowed) return { error: RATE_LIMIT_MESSAGE };
 
   const config = CONFIG[targetType];
   const supabase = await createClient();
@@ -73,16 +81,10 @@ async function toggleReaction(
 
   if (existing) {
     if (existing.reaction === reaction) {
-      const { error } = await supabase
-        .from(config.table)
-        .delete()
-        .eq("id", existing.id);
+      const { error } = await supabase.from(config.table).delete().eq("id", existing.id);
       if (error) return { error: error.message };
     } else {
-      const { error } = await supabase
-        .from(config.table)
-        .update({ reaction })
-        .eq("id", existing.id);
+      const { error } = await supabase.from(config.table).update({ reaction }).eq("id", existing.id);
       if (error) return { error: error.message };
     }
   } else {
@@ -97,6 +99,10 @@ async function toggleReaction(
     }
     const { error } = await supabase.from(config.table).insert(insertPayload);
     if (error) return { error: error.message };
+    return {
+      success: "リアクションを更新しました。",
+      goodAdded: reaction === "good",
+    };
   }
 
   return { success: "リアクションを更新しました。" };
@@ -108,6 +114,39 @@ export async function toggleReviewReaction(
   albumId?: string,
 ): Promise<ReactionResult> {
   const result = await toggleReaction("review", reviewId, reaction);
+
+  // good リアクション新規付与時のみ、レビュー投稿者へ通知。
+  // bad は通知しない。post リアクションは投稿者IDが無いため通知対象外。
+  if (!result.error && result.goodAdded) {
+    try {
+      const supabase = await createClient();
+      const { data: review } = await supabase
+        .from("reviews")
+        .select("user_id, album_id")
+        .eq("id", reviewId)
+        .maybeSingle();
+
+      if (review?.user_id) {
+        const user = await getUser();
+        let actorName = "誰か";
+        if (user) {
+          const profile = await ensureProfile(user.id, user.email);
+          if (profile) {
+            actorName = profilePostName(profile.display_name, profile.username);
+          }
+        }
+        await createNotification({
+          targetUserId: review.user_id,
+          type: "reaction",
+          actorName,
+          reviewId,
+        });
+      }
+    } catch (notifyErr) {
+      console.error("[notify] toggleReviewReaction:", notifyErr);
+    }
+  }
+
   if (!result.error && albumId) {
     revalidatePath(`/albums/${albumId}`);
   }

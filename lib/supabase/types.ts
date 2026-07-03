@@ -158,3 +158,79 @@ export type DbContentReport = {
   resolved_at: string | null;
   created_at: string;
 };
+
+export type DbUserList = {
+  id: string;
+  author_id: string;
+  title: string;
+  description: string | null;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbUserListItem = {
+  id: string;
+  list_id: string;
+  album_id: string;
+  position: number;
+  note: string | null;
+};
+
+export type DbUserList = {
+  id: string;
+  author_id: string;
+  title: string;
+  description: string | null;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbUserListItem = {
+  id: string;
+  list_id: string;
+  album_id: string;
+  position: number;
+  note: string | null;
+};
+
+export type DbContributionKind = "add_artist" | "add_album" | "fix_data";
+
+export type DbContributionStatus = "pending" | "approved" | "rejected";
+
+export type DbContributionRequest = {
+  id: string;
+  requester_id: string;
+  kind: DbContributionKind;
+  target_artist_id: string | null;
+  target_album_id: string | null;
+  payload: Record<string, unknown>;
+  status: DbContributionStatus;
+  admin_note: string | null;
+  created_at: string;
+  resolved_at: string | null;
+};
+
+export type DbNotificationType =
+  | "thread_reply"
+  | "post_reply"
+  | "review_comment"
+  | "comment_reply"
+  | "reaction"
+  | "follow"
+  | "contribution";
+
+export type DbNotification = {
+  id: string;
+  user_id: string;
+  type: DbNotificationType;
+  actor_name: string;
+  actor_id: string | null;
+  thread_id: string | null;
+  review_id: string | null;
+  post_id: string | null;
+  comment_id: string | null;
+  read_at: string | null;
+  created_at: string;
+};
