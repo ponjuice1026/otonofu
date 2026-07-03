@@ -11,6 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "sync:spotify": "tsx scripts/sync-spotify.ts",
     "sync:spotify:batch": "tsx scripts/sync-spotify.ts --batch",
     "sync:spotify:queue": "tsx scripts/sync-spotify.ts --queue",
@@ -23,7 +25,9 @@
     "sync:spotify:sql": "tsx scripts/export-spotify-sql.ts",
     "backfill:covers": "tsx scripts/backfill-covers.ts",
     "backfill:tracks": "tsx scripts/backfill-tracks.ts",
-    "backfill:tracks:all": "tsx scripts/backfill-tracks.ts --limit=0 --delay=1500"
+    "backfill:tracks:all": "tsx scripts/backfill-tracks.ts --limit=0 --delay=1500",
+    "seed:reviews": "node scripts/seed-reviews.mjs",
+    "import:missing": "tsx scripts/import-missing-albums.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -43,6 +47,8 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "tsx": "^4.20.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
   }
 }

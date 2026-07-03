@@ -1,0 +1,871 @@
+{
+  "_meta": {
+    "purpose": "ローンチ初期の“聖地化”用シードコンテンツ。運営が用意するエディトリアルレビュー + 議論の火種。",
+    "genre_focus": "邦楽オルタナ/インディ〜シティポップ(評論好きが愛する名盤／RYMの日本語カバーが薄い領域)",
+    "rating_scale": "0〜10(reviews.rating と rating_lyrics/melody/performance/atmosphere/completion に対応)",
+    "criteria_order": [
+      "歌詞=rating_lyrics",
+      "メロディ=rating_melody",
+      "演奏技術=rating_performance",
+      "雰囲気=rating_atmosphere",
+      "完成度=rating_completion"
+    ],
+    "how_to_use": "SEED-README.md を参照。album は spotify_query で先に同期→album_id を解決してから review を挿入、その後 comments を挿入。",
+    "ethics": "review 本文は運営(編集部)名義で公開する前提の“本物のレビュー”。comments は議論の呼び水となるシードで、実在の別人になりすます意図はない。理想は早期ユーザーの本物投稿への置換。"
+  },
+  "reviews": [
+    {
+      "artist": "フィッシュマンズ",
+      "album": "空中キャンプ",
+      "spotify_query": "Fishmans 空中キャンプ",
+      "year": 1996,
+      "rating": 9.6,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 10,
+      "rating_atmosphere": 10,
+      "rating_completion": 10,
+      "body": "ダブとポップスの境界を溶かした、日本のロックの到達点のひとつ。反復するベースと浮遊するボーカルが作る“余白”が主役で、聴くたびに部屋の空気が変わる。ここから『LONG SEASON』『宇宙 日本 世田谷』へ続く三部作の入口として、まずここから潜ってほしい。",
+      "comments": [
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "『ナイトクルージング』のイントロで毎回鳥肌立つ。夜に聴く用の名盤。"
+        },
+        {
+          "anonymous_name": "ディグ勢",
+          "body": "海外のシューゲイザー好きに勧めると大体ハマる。もっと世界で評価されていい。"
+        },
+        {
+          "anonymous_name": "リスナーA",
+          "body": "ダブ通ってからだと演奏の凄さが分かる。ベースだけ追っても一枚成立する。"
+        }
+      ]
+    },
+    {
+      "artist": "フィッシュマンズ",
+      "album": "LONG SEASON",
+      "spotify_query": "Fishmans LONG SEASON",
+      "year": 1996,
+      "rating": 9.6,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 10,
+      "rating_atmosphere": 10,
+      "rating_completion": 10,
+      "body": "35分・全1曲という構成それ自体が体験。楽章のように移り変わりながら、最後には最初のフレーズへ還ってくる円環構造が美しい。“アルバム”という単位でしか鳴らせない音楽の代表例で、途中で止められない。完成度で言えば邦楽屈指。",
+      "comments": [
+        {
+          "anonymous_name": "名無し",
+          "body": "1曲なのに一瞬で終わる感覚。時間の感じ方が変わる。"
+        },
+        {
+          "anonymous_name": "考察好き",
+          "body": "空中キャンプの延長にして解体。セットで語られるべき。"
+        }
+      ]
+    },
+    {
+      "artist": "コーネリアス",
+      "album": "Fantasma",
+      "spotify_query": "Cornelius Fantasma",
+      "year": 1997,
+      "rating": 9.2,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 10,
+      "rating_completion": 10,
+      "body": "渋谷系の到達点であり、ヘッドフォン再生を前提にした音の遊園地。ジャンルを高速で横断するコラージュ感覚と、Bibio以降の海外リスナーにも刺さる音響設計。“聴く”より“体験する”一枚で、当時の国内外の批評を一気に更新した。",
+      "comments": [
+        {
+          "anonymous_name": "ヘッドフォン派",
+          "body": "スピーカーとヘッドフォンで別物。パンニングが完全に楽器。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "海外での再評価がすごい。20年以上前の音とは思えない。"
+        }
+      ]
+    },
+    {
+      "artist": "椎名林檎",
+      "album": "勝訴ストリップ",
+      "spotify_query": "椎名林檎 勝訴ストリップ",
+      "year": 2000,
+      "rating": 9.2,
+      "rating_lyrics": 10,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "言葉の選び方・譜割り・アレンジの過剰さが、全部“作家性”として噛み合った2ndにして代表作。歌謡曲とオルタナを地続きにした構成力は圧巻で、後の東京事変へ繋がる回路がここに全部ある。歌詞を追うだけでも語れる密度。",
+      "comments": [
+        {
+          "anonymous_name": "歌詞厨",
+          "body": "『ギブス』の“あたしは移動しないわ”の切り取り方が天才。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "アレンジ過剰なのに散らからない。編曲の勝利。"
+        },
+        {
+          "anonymous_name": "リスナーB",
+          "body": "当時のJ-POPの中でこれが売れた事実がすごい。"
+        }
+      ]
+    },
+    {
+      "artist": "東京事変",
+      "album": "教育",
+      "spotify_query": "東京事変 教育",
+      "year": 2004,
+      "rating": 9.2,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 10,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "バンドとしての演奏力を前面に出した1st。ソロの多面性を“合奏”に落とし込み、各パートの技巧が曲の推進力になっている。椎名林檎名義との違いを聴き比べる入口として最適で、演奏技術を語りたい人向けの一枚。",
+      "comments": [
+        {
+          "anonymous_name": "演奏オタ",
+          "body": "キーボードとギターの応酬が最高。ライブ映えする曲だらけ。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "ソロとバンドで椎名林檎の見え方が変わる。両方聴くべき。"
+        }
+      ]
+    },
+    {
+      "artist": "ナンバーガール",
+      "album": "SAPPUKEI",
+      "spotify_query": "NUMBER GIRL SAPPUKEI",
+      "year": 2000,
+      "rating": 9.0,
+      "rating_lyrics": 9,
+      "rating_melody": 8,
+      "rating_performance": 10,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "轟音と緊張感の設計が凄い、日本のオルタナの金字塔。デイヴ・フリッドマンの録音でノイズの粒立ちが際立ち、疾走とタメの落差で聴き手を掴む。後続バンドへの影響を考えても、邦楽ロック史を語るなら避けて通れない。",
+      "comments": [
+        {
+          "anonymous_name": "轟音好き",
+          "body": "ギターの刻みが気持ちよすぎる。音量上げてなんぼ。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "凛として時雨とかの源流を感じる。影響デカい。"
+        }
+      ]
+    },
+    {
+      "artist": "スピッツ",
+      "album": "ハチミツ",
+      "spotify_query": "スピッツ ハチミツ",
+      "year": 1995,
+      "rating": 9.0,
+      "rating_lyrics": 9,
+      "rating_melody": 10,
+      "rating_performance": 8,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "国民的名盤だが、聴き込むほど歌詞の毒と死生観が滲む二層構造が見えてくる。メロディの強度は邦楽トップクラスで、『ロビンソン』の裏で全曲がシングル級。ポップスとして完璧でありながら批評的にも語れる、稀有なバランス。",
+      "comments": [
+        {
+          "anonymous_name": "メロディ至上主義",
+          "body": "捨て曲が本当にない。アルバムとしての打率が異常。"
+        },
+        {
+          "anonymous_name": "考察好き",
+          "body": "歌詞をちゃんと読むと結構こわい。そのギャップが良い。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "入口はロビンソンでも、化けるのは『涙がキラリ☆』以降。"
+        }
+      ]
+    },
+    {
+      "artist": "くるり",
+      "album": "THE WORLD IS MINE",
+      "spotify_query": "くるり THE WORLD IS MINE",
+      "year": 2002,
+      "rating": 9.0,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 10,
+      "rating_completion": 9,
+      "body": "エレクトロニカとポストロックへ大きく踏み出した実験作にして、くるりの振れ幅を象徴する一枚。轟音とアンビエントが同居し、次の『アンテナ』での揺り戻しと対で語ると面白い。“毎作作風が変わるバンド”の醍醐味が凝縮。",
+      "comments": [
+        {
+          "anonymous_name": "名無し",
+          "body": "くるりで一番好き。賛否あるのも含めて名盤。"
+        },
+        {
+          "anonymous_name": "ポストロック党",
+          "body": "この路線もっと続けてほしかった気持ちもある。"
+        }
+      ]
+    },
+    {
+      "artist": "イエロー・マジック・オーケストラ",
+      "album": "SOLID STATE SURVIVOR",
+      "spotify_query": "Yellow Magic Orchestra Solid State Survivor",
+      "year": 1979,
+      "rating": 9.2,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 10,
+      "rating_atmosphere": 9,
+      "rating_completion": 10,
+      "body": "テクノポップを世界基準まで押し上げた歴史的名盤。『TECHNOPOLIS』『RYDEEN』の完成度は今聴いても古びない。当時の機材制約下でこの構築性という点だけでも事件で、以後の電子音楽の見取り図がここにある。入門にも研究にも。",
+      "comments": [
+        {
+          "anonymous_name": "シンセ好き",
+          "body": "RYDEENのメロディは人類の共有財産だと思う。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "海外のエレクトロ勢が今も参照してるのが納得の音。"
+        }
+      ]
+    },
+    {
+      "artist": "坂本龍一",
+      "album": "async",
+      "spotify_query": "坂本龍一 async",
+      "year": 2017,
+      "rating": 8.8,
+      "rating_lyrics": 7,
+      "rating_melody": 8,
+      "rating_performance": 9,
+      "rating_atmosphere": 10,
+      "rating_completion": 10,
+      "body": "旋律よりも“音そのもの”と時間に向き合った晩年の到達点。環境音とピアノ、ノイズが等価に置かれ、聴く行為の集中を要求してくる。BGMを拒む硬質さがあり、批評的に語り甲斐がある一方、静かに刺さる情緒もある。",
+      "comments": [
+        {
+          "anonymous_name": "アンビエント派",
+          "body": "夜中に一人で通して聴くと世界が静かになる。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "メロディを追う音楽じゃない。でも一番“音楽”を感じる。"
+        }
+      ]
+    },
+    {
+      "artist": "大滝詠一",
+      "album": "A LONG VACATION",
+      "spotify_query": "大滝詠一 A LONG VACATION",
+      "year": 1981,
+      "rating": 9.8,
+      "rating_lyrics": 9,
+      "rating_melody": 10,
+      "rating_performance": 10,
+      "rating_atmosphere": 10,
+      "rating_completion": 10,
+      "body": "ウォール・オブ・サウンドを日本のポップスに接続した、シティポップ再評価の中心にある名盤。多幸感の裏に漂う喪失感、松本隆の詞世界、音の粒の分厚さ。海外のcity pop熱の火元のひとつで、いま最も“世界と話せる”邦楽。",
+      "comments": [
+        {
+          "anonymous_name": "シティポップ布教隊",
+          "body": "海外の若い子がこれをディグってるの、時代を感じる。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "『君は天然色』の多幸感と切なさの同居が反則。"
+        },
+        {
+          "anonymous_name": "リスナーC",
+          "body": "録音が良すぎて良い環境で聴くと別次元。"
+        }
+      ]
+    },
+    {
+      "artist": "山下達郎",
+      "album": "FOR YOU",
+      "spotify_query": "山下達郎 FOR YOU",
+      "year": 1982,
+      "rating": 9.2,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 10,
+      "rating_atmosphere": 10,
+      "rating_completion": 9,
+      "body": "夏と海のイメージを決定づけたシティポップの代表作。ボーカルのコーラスワークとグルーヴの気持ちよさは唯一無二で、演奏・録音のクオリティが全編で高止まり。『SPARKLE』のイントロだけで一生分の夏が来る。",
+      "comments": [
+        {
+          "anonymous_name": "グルーヴ担当",
+          "body": "SPARKLEのカッティング、何回コピーしようとして挫折したか。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "夏に流すと勝ち。文句なし。"
+        }
+      ]
+    },
+    {
+      "artist": "細野晴臣",
+      "album": "HOSONO HOUSE",
+      "spotify_query": "細野晴臣 HOSONO HOUSE",
+      "year": 1973,
+      "rating": 9.2,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 10,
+      "rating_completion": 9,
+      "body": "自宅録音の温度感がそのまま音楽になった、日本のルーツ・ロックの原点的一枚。肩の力の抜けたグルーヴと生活感のある詞が心地よく、YMO以前の細野を知る鍵。宅録・ローファイ文脈の先駆けとして今の耳にこそ響く。",
+      "comments": [
+        {
+          "anonymous_name": "宅録好き",
+          "body": "この“部屋鳴り”がたまらない。現代の宅録勢に聴いてほしい。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "YMOしか知らない人が聴くと衝撃を受けるやつ。"
+        }
+      ]
+    },
+    {
+      "artist": "cero",
+      "album": "Obscure Ride",
+      "spotify_query": "cero Obscure Ride",
+      "year": 2015,
+      "rating": 9.0,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 10,
+      "rating_completion": 9,
+      "body": "R&Bやネオソウルの語法を日本語ポップスへ大胆に導入し、2010年代の邦楽の潮目を変えた一枚。リズムの解像度とコーラスの浮遊感が新しく、以降の“シティポップ以後”の流れの起点。海外の同時代性と接続できる稀有な邦楽。",
+      "comments": [
+        {
+          "anonymous_name": "ネオソウル党",
+          "body": "この後の日本のバンドのリズム観が変わった気がする。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "『Summer Soul』の気持ちよさは永遠。"
+        }
+      ]
+    },
+    {
+      "artist": "中村佳穂",
+      "album": "AINOU",
+      "spotify_query": "中村佳穂 AINOU",
+      "year": 2018,
+      "rating": 9.2,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 10,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "歌の即興性とビート・メイキングの現代性が同居した、2010年代邦楽の重要作。譜割りやフェイクの自由さは一聴で“他と違う”と分かり、ライブ体験の熱がパッケージに宿る。新しい世代の“歌の名手”を語る起点になる一枚。",
+      "comments": [
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "ライブを観てからアルバムに戻ると評価が跳ね上がる。"
+        },
+        {
+          "anonymous_name": "歌もの好き",
+          "body": "『q』の展開で毎回持っていかれる。歌が生きてる。"
+        }
+      ]
+    },
+    {
+      "artist": "荒井由実",
+      "album": "ひこうき雲",
+      "spotify_query": "荒井由実 ひこうき雲",
+      "year": 1973,
+      "rating": 9.4,
+      "rating_lyrics": 9,
+      "rating_melody": 10,
+      "rating_performance": 9,
+      "rating_atmosphere": 10,
+      "rating_completion": 9,
+      "body": "19歳のデビュー作にして、日本のポップスの語彙を更新した歴史的一枚。コード感とコーラスワークは当時の歌謡曲と一線を画し、死を静かに見つめる表題曲の透明感は今も色褪せない。ニューミュージックの起点として、まずここから聴き始めてほしい。",
+      "comments": [
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "19歳でこの完成度は反則。コード進行が全然古びない。"
+        },
+        {
+          "anonymous_name": "考察好き",
+          "body": "表題曲の詞、明るいメロディで死を歌うギャップがすごい。"
+        }
+      ]
+    },
+    {
+      "artist": "竹内まりや",
+      "album": "VARIETY",
+      "spotify_query": "竹内まりや VARIETY",
+      "year": 1984,
+      "rating": 9.2,
+      "rating_lyrics": 9,
+      "rating_melody": 10,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "全曲自作に舵を切った再出発作で、山下達郎のプロデュース力も相まって捨て曲なし。近年のcity ppopブームで世界的に掘られた『プラスティック・ラヴ』を含み、いま最も“海外と話せる”邦楽の一枚。ソングライターとしての充実がそのまま音になっている。",
+      "comments": [
+        {
+          "anonymous_name": "シティポップ布教隊",
+          "body": "プラスティック・ラヴで海外から入ってきた人、まずこのアルバム通しで。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "達郎印のアレンジが全開。夫婦の相性が音に出てる。"
+        }
+      ]
+    },
+    {
+      "artist": "山下達郎",
+      "album": "RIDE ON TIME",
+      "spotify_query": "山下達郎 RIDE ON TIME",
+      "year": 1980,
+      "rating": 9.0,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 10,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "ブレイクを決定づけた表題曲を軸に、ソウル/ファンクの咀嚼が一段深まった代表作。コーラスの多重録音とグルーヴの推進力は達郎の真骨頂で、FOR YOUと並べて“達郎入門の二枚”として推せる。歌の熱量と作りの精度が両立している。",
+      "comments": [
+        {
+          "anonymous_name": "グルーヴ担当",
+          "body": "表題曲のサビの伸び、何度聴いても気持ちいい。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "FOR YOUの一歩手前。ここからの流れで聴くと熱い。"
+        }
+      ]
+    },
+    {
+      "artist": "坂本龍一",
+      "album": "音楽図鑑",
+      "spotify_query": "坂本龍一 音楽図鑑",
+      "year": 1984,
+      "rating": 8.6,
+      "rating_lyrics": 7,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "YMO以後のソロの充実を示す一枚で、ポップとアカデミズムの往復が心地よい。多彩なゲストと音色の実験が“図鑑”の名にふさわしく、後年のasyncまで続く探究の中間地点として位置づけられる。教授の振れ幅を一望できる。",
+      "comments": [
+        {
+          "anonymous_name": "シンセ好き",
+          "body": "YMOしか知らない人にこそ聴いてほしいソロの名盤。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "asyncから遡って聴くと繋がりが見えて面白い。"
+        }
+      ]
+    },
+    {
+      "artist": "イエロー・マジック・オーケストラ",
+      "album": "BGM",
+      "spotify_query": "Yellow Magic Orchestra BGM",
+      "year": 1981,
+      "rating": 8.6,
+      "rating_lyrics": 7,
+      "rating_melody": 8,
+      "rating_performance": 9,
+      "rating_atmosphere": 10,
+      "rating_completion": 9,
+      "body": "ヒットの明るさから一転、内省的で実験的なムードへ踏み込んだ問題作。ゲート・リバーブやシーケンスの質感は当時最先端で、以後のエレクトロニカを先取りしている。ポップな入口の裏にあるYMOのもう一つの顔で、通好みの一枚。",
+      "comments": [
+        {
+          "anonymous_name": "アンビエント派",
+          "body": "Solid Stateの後にこれを出す勇気。今聴くとむしろ新しい。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "暗くて最高。夜のBGMという意味でも正しい。"
+        }
+      ]
+    },
+    {
+      "artist": "ザ・ミッシェル・ガン・エレファント",
+      "album": "ギヤ・ブルーズ",
+      "spotify_query": "thee michelle gun elephant ギヤ・ブルーズ",
+      "year": 1998,
+      "rating": 9.0,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 10,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "日本のガレージ/R&Rを更新した代表作。無駄をそぎ落としたリフとチバユウスケの声の説得力で、最初から最後まで疾走感が途切れない。轟音バンドの系譜を語るなら外せない一枚で、ライブ感がそのままパッケージされている。",
+      "comments": [
+        {
+          "anonymous_name": "轟音好き",
+          "body": "リフの潔さが最高。爆音で聴くとテンション上がる。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "チバの声はやっぱり替えがきかない。"
+        }
+      ]
+    },
+    {
+      "artist": "ブランキー・ジェット・シティ",
+      "album": "C.B.Jim",
+      "spotify_query": "BLANKEY JET CITY C.B.Jim",
+      "year": 1993,
+      "rating": 8.8,
+      "rating_lyrics": 9,
+      "rating_melody": 8,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "危うさと叙情が同居する3ピースの名盤。ざらついた質感の奥に映画的な物語性があり、浅井健一の詞世界が鋭く刺さる。90年代邦ロックの“不良の美学”を代表する一枚で、ミッシェルと合わせて語られることも多い。",
+      "comments": [
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "歌詞が短編小説みたい。世界観に持っていかれる。"
+        },
+        {
+          "anonymous_name": "リスナーB",
+          "body": "3ピースでこの情報量、演奏の余白の使い方が上手い。"
+        }
+      ]
+    },
+    {
+      "artist": "eastern youth",
+      "album": "口笛、夜更けに響く",
+      "spotify_query": "eastern youth 口笛 夜更けに響く",
+      "year": 1997,
+      "rating": 8.6,
+      "rating_lyrics": 9,
+      "rating_melody": 8,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 8,
+      "body": "叫びと生活実感が地続きになった、日本語エモ/オルタナの重要作。飾らない言葉で日々の痛みと矜持を歌い、後続の轟音・エモ勢に与えた影響は計り知れない。派手さより芯の強さで聴かせる、噛むほど沁みる一枚。",
+      "comments": [
+        {
+          "anonymous_name": "歌詞厨",
+          "body": "生活の言葉でここまで熱くなれるのがすごい。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "日本語ハードコア/エモの原点のひとつ。"
+        }
+      ]
+    },
+    {
+      "artist": "ナンバーガール",
+      "album": "SCHOOL GIRL DISTORTIONAL ADDICT",
+      "spotify_query": "NUMBER GIRL SCHOOL GIRL DISTORTIONAL ADDICT",
+      "year": 1999,
+      "rating": 9.0,
+      "rating_lyrics": 9,
+      "rating_melody": 8,
+      "rating_performance": 10,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "メジャー1st にして、性急なギターと言葉数の多い譜割りが完成された一枚。SAPPUKEIの緊張感と対で、こちらは疾走とポップさが前に出る。向井秀徳の語感の発明はここで一気に開花し、以後の邦ロックの基準を作った。",
+      "comments": [
+        {
+          "anonymous_name": "轟音好き",
+          "body": "『透明少女』のイントロは日本のロックの名場面。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "SAPPUKEIと迷うけど、勢いならこっち。"
+        }
+      ]
+    },
+    {
+      "artist": "宇多田ヒカル",
+      "album": "First Love",
+      "spotify_query": "宇多田ヒカル First Love",
+      "year": 1999,
+      "rating": 9.0,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "R&Bの語法を日本語ポップスに自然に溶かし込み、時代の空気ごと塗り替えたデビュー作。歌唱とメロディセンスの成熟度は15歳とは思えず、セールスの記録以上に“作家”としての衝撃が大きい。J-POPの分水嶺のひとつ。",
+      "comments": [
+        {
+          "anonymous_name": "名無し",
+          "body": "当時のインパクトを知らない人も、今聴いて古びてないのがすごい。"
+        },
+        {
+          "anonymous_name": "歌もの好き",
+          "body": "『Automatic』の譜割りが日本語の歌い方を変えた。"
+        }
+      ]
+    },
+    {
+      "artist": "サザンオールスターズ",
+      "album": "KAMAKURA",
+      "spotify_query": "サザンオールスターズ KAMAKURA",
+      "year": 1985,
+      "rating": 8.6,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 8,
+      "body": "打ち込みと生の融合に踏み込んだ、野心的な二枚組。ポップスの幅を大きく広げた実験作で、ヒット曲のイメージだけでサザンを語るのはもったいないと分かる一枚。散らかりも含めて“作家の遊び場”として面白い。",
+      "comments": [
+        {
+          "anonymous_name": "考察好き",
+          "body": "シングルのサザンしか知らないと驚く。実験作。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "二枚組の密度、当時の勢いを感じる。"
+        }
+      ]
+    },
+    {
+      "artist": "Mr.Children",
+      "album": "深海",
+      "spotify_query": "Mr.Children 深海",
+      "year": 1996,
+      "rating": 9.0,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "国民的バンドが売れっ子の絶頂で作った、重く内省的なコンセプト作。曲間が地続きに繋がる構成と、光の裏の影を掘る詞が濃密で、ヒット曲群とは別の“語れるミスチル”がここにある。アルバム単位で聴く価値が高い一枚。",
+      "comments": [
+        {
+          "anonymous_name": "名無し",
+          "body": "売れてる時にこれを出す胆力。名盤。"
+        },
+        {
+          "anonymous_name": "考察好き",
+          "body": "通しで聴かないと意味が半減する。曲順が命。"
+        }
+      ]
+    },
+    {
+      "artist": "スピッツ",
+      "album": "フェイクファー",
+      "spotify_query": "スピッツ フェイクファー",
+      "year": 1998,
+      "rating": 9.0,
+      "rating_lyrics": 9,
+      "rating_melody": 10,
+      "rating_performance": 8,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "ハチミツ〜インディゴ地平線の流れの到達点にして、バンドの黄金期を締める一枚。『楓』『スピカ』を含み、メロディの強度と歌詞の陰影が高い次元で両立する。ポップスとして完璧でありつつ、聴き込むほど深い。",
+      "comments": [
+        {
+          "anonymous_name": "メロディ至上主義",
+          "body": "『楓』が入ってる時点で名盤確定。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "ハチミツ派だけど、完成度ではこっちを推したい。"
+        }
+      ]
+    },
+    {
+      "artist": "くるり",
+      "album": "図鑑",
+      "spotify_query": "くるり 図鑑",
+      "year": 2000,
+      "rating": 8.6,
+      "rating_lyrics": 8,
+      "rating_melody": 8,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "轟音とローファイ、内省が渦巻く2nd。フェンダーの生々しさと不穏さが全編を覆い、後の作風変遷の起点になった重要作。『さよならストレンジャー』の素朴さから一気に深く潜る、くるりのもう一つの顔。",
+      "comments": [
+        {
+          "anonymous_name": "ポストロック党",
+          "body": "この暗さがクセになる。轟音期のくるりが好き。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "アルバムごとに別バンドみたいなのがくるりの魅力。"
+        }
+      ]
+    },
+    {
+      "artist": "サカナクション",
+      "album": "sakanaction",
+      "spotify_query": "サカナクション sakanaction",
+      "year": 2013,
+      "rating": 8.8,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "ロックとダンスミュージックの越境を国民的スケールでやり切ったセルフタイトル作。『ミュージック』『ユリイカ』などを含み、踊れるのに叙情的という独自のバランスが確立された。2010年代邦楽のモードを象徴する一枚。",
+      "comments": [
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "バンドとクラブの両方に足を置けるのが強い。"
+        },
+        {
+          "anonymous_name": "ダンス派",
+          "body": "『ユリイカ』の構築美、何回でも聴ける。"
+        }
+      ]
+    },
+    {
+      "artist": "星野源",
+      "album": "YELLOW DANCER",
+      "spotify_query": "星野源 YELLOW DANCER",
+      "year": 2015,
+      "rating": 9.0,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "ソウル/ファンクを日本語ポップスへ落とし込む“イエローミュージック”を掲げた出世作。演奏の粒立ちとメロディの親しみやすさが両立し、ヒットと批評を同時に取った。大滝〜達郎の系譜を現代に接続する一枚として面白い。",
+      "comments": [
+        {
+          "anonymous_name": "グルーヴ担当",
+          "body": "生バンドの気持ちよさ。踊れる邦楽の良い見本。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "シティポップの現代版として大滝と並べて聴きたい。"
+        }
+      ]
+    },
+    {
+      "artist": "Perfume",
+      "album": "GAME",
+      "spotify_query": "Perfume GAME",
+      "year": 2008,
+      "rating": 8.8,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "中田ヤスタカのプロダクションが花開いた、テクノポップの現代的名盤。硬質なシンセと甘いメロの配合が絶妙で、YMO以降の日本のエレクトロ・ポップの系譜を更新した。アイドル/テクノの垣根を越えた完成度で、海外評価も高い。",
+      "comments": [
+        {
+          "anonymous_name": "シンセ好き",
+          "body": "中田ヤスタカの全盛期。音の抜けが最高。"
+        },
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "テクノポップの現代版としてYMO好きにも刺さる。"
+        }
+      ]
+    },
+    {
+      "artist": "King Gnu",
+      "album": "Sympa",
+      "spotify_query": "King Gnu Sympa",
+      "year": 2019,
+      "rating": 8.8,
+      "rating_lyrics": 8,
+      "rating_melody": 9,
+      "rating_performance": 10,
+      "rating_atmosphere": 9,
+      "rating_completion": 8,
+      "body": "ミクスチャー的な雑食性と高い演奏力を、ポップスの尺に凝縮したメジャー1st。ジャズ〜ヒップホップ〜ロックを横断する編曲は緻密で、常田大希のアレンジャーとしての力量が全面に出ている。現行メジャーで“演奏を語れる”一枚。",
+      "comments": [
+        {
+          "anonymous_name": "演奏オタ",
+          "body": "アレンジの密度が異常。バンドの体力がすごい。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "『Prayer X』の構築美でやられた。"
+        }
+      ]
+    },
+    {
+      "artist": "米津玄師",
+      "album": "STRAY SHEEP",
+      "spotify_query": "米津玄師 STRAY SHEEP",
+      "year": 2020,
+      "rating": 9.0,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "ボカロ以後の作家性がメジャーの頂点で結実した一枚。『Lemon』『感電』などキラーチューンを並べつつ、アルバムとしての流れも保つバランス感覚が見事。時代のど真ん中でこの作家性を通す強さが、いま最も語るに値する。",
+      "comments": [
+        {
+          "anonymous_name": "名無しの音楽好き",
+          "body": "シングルの寄せ集めにならず一枚で成立してるのが偉い。"
+        },
+        {
+          "anonymous_name": "考察好き",
+          "body": "ボカロ〜メジャーの流れを一望できる。"
+        }
+      ]
+    },
+    {
+      "artist": "藤井風",
+      "album": "HELP EVER HURT NEVER",
+      "spotify_query": "藤井風 HELP EVER HURT NEVER",
+      "year": 2020,
+      "rating": 9.0,
+      "rating_lyrics": 9,
+      "rating_melody": 9,
+      "rating_performance": 9,
+      "rating_atmosphere": 9,
+      "rating_completion": 9,
+      "body": "ピアノ弾き語りのルーツとR&B/ソウルの洗練が同居したデビュー作。方言まじりの詞と滑らかなグルーヴが唯一無二で、一発でシーンの空気を変えた。ソングライティングと歌・演奏が高水準で揃った、近年屈指の新人作。",
+      "comments": [
+        {
+          "anonymous_name": "グルーヴ担当",
+          "body": "ピアノとリズム感が別格。海外でも通用する音。"
+        },
+        {
+          "anonymous_name": "名無し",
+          "body": "デビュー作でこの完成度、次が怖いくらい。"
+        }
+      ]
+    }
+  ],
+  "discussion_threads": [
+    {
+      "title": "フィッシュマンズは『空中キャンプ』か『LONG SEASON』か問題",
+      "album_hint": "Fishmans 空中キャンプ",
+      "body": "入口としても最高到達点としても語られる2枚。歌モノとしての完成度なら空中キャンプ、体験としての凄みならLONG SEASON、みたいな整理をよく見るけど、みんなはどっち派？3枚目の『宇宙 日本 世田谷』を推す人の理由も聞きたい。"
+    },
+    {
+      "title": "“過大評価”だと思う邦楽の名盤、正直に挙げてみる",
+      "album_hint": null,
+      "body": "荒れない範囲で。定番として持ち上げられてるけど自分はそこまでハマれなかった、という盤とその理由を教えてほしい。逆張りではなく、どこが刺さらなかったかを言語化するスレ。名盤扱いへの反論歓迎。"
+    },
+    {
+      "title": "海外に一枚だけ邦楽を布教するなら何を渡す？",
+      "album_hint": "大滝詠一 A LONG VACATION",
+      "body": "city pop人気で入口はできた前提で、その次に渡す“二枚目”を考えたい。ロンバケ→次は?  フィッシュマンズ?  YMO?  cero?  相手のリスニング傾向別におすすめを組み立てたい。"
+    },
+    {
+      "title": "椎名林檎名義と東京事変、作家性が強いのはどっち？",
+      "album_hint": "東京事変 教育",
+      "body": "ソロは編曲の過剰さ=作家性、事変は合奏の妙=バンドの作家性、という気がしてる。『勝訴ストリップ』と『教育』を軸に、どっちの椎名林檎が好きか語りたい。"
+    },
+    {
+      "title": "2010年代邦楽の“潮目”を変えた一枚を挙げるなら",
+      "album_hint": "cero Obscure Ride",
+      "body": "cero『Obscure Ride』、中村佳穂『AINOU』あたりを挙げる人が多い印象。他にも“ここから空気が変わった”という盤があれば理由込みで。ゼロ年代との断絶/接続の話もしたい。"
+    },
+    {
+      "title": "アルバム単位で聴く文化、正直まだ残ってる？",
+      "album_hint": "Fishmans LONG SEASON",
+      "body": "サブスク時代に『LONG SEASON』みたいな“通しで聴く前提”の作品をどう楽しんでるか知りたい。プレイリスト派 vs 通し派、それぞれの聴き方とメリットを共有するスレ。"
+    }
+  ]
+}
