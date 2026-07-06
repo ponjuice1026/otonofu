@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -9,7 +10,22 @@ export type AuthFormState = {
   success?: string;
 };
 
-function getSiteUrl(): string {
+// アクセス中の実際のドメインを優先して使う。
+// Vercel などのプロキシ背後では x-forwarded-* が本番URLを持つ。
+// 取得できない場合のみ環境変数→localhost の順にフォールバック。
+async function getSiteUrl(): Promise<string> {
+  try {
+    const h = await headers();
+    const host = h.get("x-forwarded-host") ?? h.get("host");
+    if (host) {
+      const proto =
+        h.get("x-forwarded-proto") ??
+        (host.startsWith("localhost") ? "http" : "https");
+      return `${proto}://${host}`;
+    }
+  } catch {
+    // headers() が使えない文脈では環境変数にフォールバック
+  }
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 }
 
@@ -92,7 +108,7 @@ export async function signup(
     email,
     password,
     options: {
-      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      emailRedirectTo: `${await getSiteUrl()}/auth/callback`,
       data: { display_name: displayName },
     },
   });
@@ -129,7 +145,7 @@ export async function requestPasswordReset(
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${getSiteUrl()}/auth/callback?next=/auth/reset`,
+    redirectTo: `${await getSiteUrl()}/auth/callback?next=/auth/reset`,
   });
 
   if (error) {
