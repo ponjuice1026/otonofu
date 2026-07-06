@@ -114,6 +114,79 @@ export async function signup(
   };
 }
 
+export async function requestPasswordReset(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const configError = ensureConfigured();
+  if (configError) return configError;
+
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    return { error: "メールアドレスを入力してください。" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getSiteUrl()}/auth/callback?next=/auth/reset`,
+  });
+
+  if (error) {
+    return { error: translateAuthError(error.message) };
+  }
+
+  // メールの存在有無を漏らさないよう、常に成功メッセージを返す
+  return {
+    success:
+      "パスワード再設定用のメールを送信しました。届いたメールのリンクを開いて再設定してください。",
+  };
+}
+
+export async function updatePassword(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const configError = ensureConfigured();
+  if (configError) return configError;
+
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirmPassword") ?? "");
+
+  if (!password) {
+    return { error: "新しいパスワードを入力してください。" };
+  }
+
+  if (password.length < 6) {
+    return { error: "パスワードは6文字以上にしてください。" };
+  }
+
+  if (password !== confirm) {
+    return { error: "パスワードが一致しません。" };
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      error:
+        "再設定リンクの有効期限が切れているか、無効です。もう一度メールを送信してください。",
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { error: translateAuthError(error.message) };
+  }
+
+  return { success: "パスワードを変更しました。新しいパスワードでログインできます。" };
+}
+
 export async function logout(): Promise<void> {
   if (!isSupabaseConfigured()) {
     redirect("/login");
@@ -133,6 +206,15 @@ function translateAuthError(message: string): string {
   }
   if (message.includes("User already registered")) {
     return "このメールアドレスは既に登録されています。";
+  }
+  if (message.includes("should be different from the old password")) {
+    return "現在と異なる新しいパスワードを設定してください。";
+  }
+  if (message.includes("Password should be at least")) {
+    return "パスワードは6文字以上にしてください。";
+  }
+  if (message.toLowerCase().includes("rate limit")) {
+    return "リクエストが多すぎます。しばらくしてから再度お試しください。";
   }
   return message;
 }

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import {
   login,
   signup,
+  requestPasswordReset,
   type AuthFormState,
 } from "@/app/login/actions";
 
@@ -14,7 +15,7 @@ type AuthFormProps = {
 };
 
 export function AuthForm({ redirect }: AuthFormProps) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [loginState, loginAction, loginPending] = useActionState(
     login,
     initialState,
@@ -23,10 +24,29 @@ export function AuthForm({ redirect }: AuthFormProps) {
     signup,
     initialState,
   );
+  const [forgotState, forgotAction, forgotPending] = useActionState(
+    requestPasswordReset,
+    initialState,
+  );
 
-  const state = mode === "login" ? loginState : signupState;
-  const action = mode === "login" ? loginAction : signupAction;
-  const pending = mode === "login" ? loginPending : signupPending;
+  const state =
+    mode === "login"
+      ? loginState
+      : mode === "signup"
+        ? signupState
+        : forgotState;
+  const action =
+    mode === "login"
+      ? loginAction
+      : mode === "signup"
+        ? signupAction
+        : forgotAction;
+  const pending =
+    mode === "login"
+      ? loginPending
+      : mode === "signup"
+        ? signupPending
+        : forgotPending;
 
   return (
     <div className="surface-panel p-6">
@@ -46,6 +66,12 @@ export function AuthForm({ redirect }: AuthFormProps) {
           新規登録
         </button>
       </div>
+
+      {mode === "forgot" && (
+        <p className="page-desc mb-4 text-sm">
+          登録済みのメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。
+        </p>
+      )}
 
       <form action={action} className="flex flex-col gap-4">
         {redirect && <input type="hidden" name="redirect" value={redirect} />}
@@ -77,20 +103,32 @@ export function AuthForm({ redirect }: AuthFormProps) {
             placeholder="you@example.com"
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="text-neutral-400">パスワード</span>
-          <input
-            type="password"
-            name="password"
-            required
-            minLength={6}
-            autoComplete={
-              mode === "login" ? "current-password" : "new-password"
-            }
-            className="input-field"
-            placeholder={mode === "signup" ? "6文字以上" : ""}
-          />
-        </label>
+        {mode !== "forgot" && (
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="text-neutral-400">パスワード</span>
+            <input
+              type="password"
+              name="password"
+              required
+              minLength={6}
+              autoComplete={
+                mode === "login" ? "current-password" : "new-password"
+              }
+              className="input-field"
+              placeholder={mode === "signup" ? "6文字以上" : ""}
+            />
+          </label>
+        )}
+
+        {mode === "login" && (
+          <button
+            type="button"
+            onClick={() => setMode("forgot")}
+            className="self-end text-xs text-neutral-400 underline underline-offset-2 hover:text-neutral-200"
+          >
+            パスワードをお忘れですか？
+          </button>
+        )}
 
         {state.error && <p className="alert alert-error">{state.error}</p>}
         {state.success && <p className="alert alert-success">{state.success}</p>}
@@ -100,8 +138,20 @@ export function AuthForm({ redirect }: AuthFormProps) {
             ? "処理中…"
             : mode === "login"
               ? "ログイン"
-              : "アカウントを作成"}
+              : mode === "signup"
+                ? "アカウントを作成"
+                : "再設定メールを送信"}
         </button>
+
+        {mode === "forgot" && (
+          <button
+            type="button"
+            onClick={() => setMode("login")}
+            className="self-center text-xs text-neutral-400 underline underline-offset-2 hover:text-neutral-200"
+          >
+            ログインに戻る
+          </button>
+        )}
       </form>
     </div>
   );
