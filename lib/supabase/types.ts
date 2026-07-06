@@ -83,6 +83,9 @@ export type DbDiscussionThread = {
   view_count: number;
   review_id: string | null;
   album_id: string | null;
+  featured_rank: number | null;
+  featured_note: string | null;
+  featured_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -157,24 +160,6 @@ export type DbContentReport = {
   resolved_by: string | null;
   resolved_at: string | null;
   created_at: string;
-};
-
-export type DbUserList = {
-  id: string;
-  author_id: string;
-  title: string;
-  description: string | null;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
-};
-
-export type DbUserListItem = {
-  id: string;
-  list_id: string;
-  album_id: string;
-  position: number;
-  note: string | null;
 };
 
 export type DbUserList = {
