@@ -14,6 +14,7 @@ export const RATE_LIMIT_MESSAGE =
 export const RATE_LIMITS = {
   thread_create: { maxCount: 3, windowSeconds: 60 * 60 }, // スレ作成 3/時
   post_create: { maxCount: 10, windowSeconds: 60 }, // 投稿 10/分
+  review: { maxCount: 10, windowSeconds: 60 * 60 }, // レビュー投稿 10/時
   review_comment: { maxCount: 5, windowSeconds: 60 * 60 }, // レビュー(コメント) 5/時
   reaction: { maxCount: 30, windowSeconds: 60 }, // リアクション 30/分
   report: { maxCount: 10, windowSeconds: 60 * 60 }, // 通報 10/時

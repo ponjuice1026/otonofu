@@ -14,6 +14,10 @@ describe("RATE_LIMITS", () => {
     expect(RATE_LIMITS.post_create).toEqual({ maxCount: 10, windowSeconds: 60 });
   });
 
+  it("レビュー投稿は 10回/時", () => {
+    expect(RATE_LIMITS.review).toEqual({ maxCount: 10, windowSeconds: 3600 });
+  });
+
   it("フォローは 60回/分", () => {
     expect(RATE_LIMITS.follow).toEqual({ maxCount: 60, windowSeconds: 60 });
   });
@@ -28,11 +32,13 @@ describe("RATE_LIMITS", () => {
   it("期待するアクションキーが揃っている", () => {
     expect(Object.keys(RATE_LIMITS).sort()).toEqual(
       [
+        "contribution",
         "follow",
         "list_create",
         "post_create",
         "reaction",
         "report",
+        "review",
         "review_comment",
         "thread_create",
       ].sort(),

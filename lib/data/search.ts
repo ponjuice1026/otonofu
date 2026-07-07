@@ -6,6 +6,10 @@ import {
   searchMatchScore,
 } from "@/lib/search/normalize";
 import { searchResultSnippet } from "@/lib/search/snippet";
+import {
+  buildIlikeOrFilter,
+  escapeLikePattern,
+} from "@/lib/search/postgrest-filter";
 import type { DbReview } from "@/lib/supabase/types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -146,7 +150,7 @@ async function searchThreads(
     .from("discussion_threads")
     .select(THREAD_SEARCH_COLUMNS)
     .eq("status", "published")
-    .or(`title.ilike.%${trimmed}%,body.ilike.%${trimmed}%`)
+    .or(buildIlikeOrFilter(["title", "body"], trimmed))
     .order("updated_at", { ascending: false })
     .limit(safeLimit * 3);
 
@@ -195,9 +199,7 @@ async function searchReviews(
     .from("reviews")
     .select("*")
     .not("user_id", "is", null)
-    .or(
-      `body.ilike.%${trimmed}%,album_title.ilike.%${trimmed}%,username.ilike.%${trimmed}%`,
-    )
+    .or(buildIlikeOrFilter(["body", "album_title", "username"], trimmed))
     .order("created_at", { ascending: false })
     .limit(safeLimit * 3);
 
@@ -250,7 +252,7 @@ async function searchDiscussionPosts(
   const { data, error } = await supabase
     .from("discussion_posts")
     .select(POST_SEARCH_COLUMNS)
-    .ilike("body", `%${trimmed}%`)
+    .ilike("body", `%${escapeLikePattern(trimmed)}%`)
     .order("created_at", { ascending: false })
     .limit(safeLimit * 4);
 
@@ -389,7 +391,7 @@ async function searchAlbumsByTitle(
   const { data: albumRows } = await supabase
     .from("albums")
     .select(ALBUM_SEARCH_COLUMNS)
-    .ilike("title", `%${trimmed}%`)
+    .ilike("title", `%${escapeLikePattern(trimmed)}%`)
     .order("year", { ascending: false })
     .limit(safeLimit * 2);
 

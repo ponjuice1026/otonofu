@@ -10,10 +10,21 @@ export type AuthFormState = {
   success?: string;
 };
 
-// アクセス中の実際のドメインを優先して使う。
-// Vercel などのプロキシ背後では x-forwarded-* が本番URLを持つ。
-// 取得できない場合のみ環境変数→localhost の順にフォールバック。
+// パスワード再設定などのメールに埋め込む URL の生成元。
+//
+// セキュリティ: x-forwarded-host は攻撃者が改ざん可能なため、
+// これを無条件に信頼するとリセットリンクを攻撃者ドメインに向けられる
+// （Host ヘッダ注入によるアカウント乗っ取り）。
+// そのため本番では必ず信頼できる固定値 NEXT_PUBLIC_SITE_URL を最優先で使う。
+// 未設定の場合（主にローカル開発）のみ、従来どおりリクエストヘッダから
+// 組み立てるフォールバックを使う。本番では必ず環境変数を設定すること。
 async function getSiteUrl(): Promise<string> {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/+$/, "");
+  }
+
+  // 開発用フォールバック（NEXT_PUBLIC_SITE_URL 未設定時のみ）。
   try {
     const h = await headers();
     const host = h.get("x-forwarded-host") ?? h.get("host");
@@ -24,9 +35,9 @@ async function getSiteUrl(): Promise<string> {
       return `${proto}://${host}`;
     }
   } catch {
-    // headers() が使えない文脈では環境変数にフォールバック
+    // headers() が使えない文脈では localhost にフォールバック
   }
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  return "http://localhost:3000";
 }
 
 function safeRedirectPath(value: FormDataEntryValue | null): string {

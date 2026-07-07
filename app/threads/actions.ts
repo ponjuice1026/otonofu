@@ -36,6 +36,40 @@ export type ThreadActionState = {
   votedOptionId?: string;
 };
 
+/**
+ * 挿入系 security definer RPC（create_discussion_post /
+ * vote_discussion_poll など）が投げる英語の例外メッセージを、
+ * 既存の日本語エラー文言にマップする（A-2）。
+ */
+function mapInsertRpcError(message: string): string {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("rate limit exceeded")) {
+    return RATE_LIMIT_MESSAGE;
+  }
+  if (normalized.includes("too many urls")) {
+    return "URL が多すぎます。数を減らして再度お試しください。";
+  }
+  if (normalized.includes("thread not found")) {
+    return "セッションが見つかりません。";
+  }
+  if (normalized.includes("option not found")) {
+    return "選択肢が見つかりません。";
+  }
+  if (normalized.includes("parent post not found")) {
+    return "返信先のコメントが見つかりません。";
+  }
+  if (
+    normalized.includes("invalid post body") ||
+    normalized.includes("invalid anonymous name") ||
+    normalized.includes("invalid voter key")
+  ) {
+    return "投稿内容を確認してください。";
+  }
+
+  return message;
+}
+
 async function requireUser() {
   if (!isSupabaseConfigured()) {
     throw new Error("Supabase が未設定です。");
@@ -307,11 +341,9 @@ export async function createDiscussionPost(
   const moderationError = checkContent(bodyRaw);
   if (moderationError) return { error: moderationError };
 
-  const allowed = await checkRateLimit("post_create", {
-    dedupBody: normalizePostBody(bodyRaw),
-  });
-  if (!allowed) return { error: RATE_LIMIT_MESSAGE };
-
+  // レート制限・重複投稿チェックは挿入 RPC(create_discussion_post)内部で
+  // check_rate_limit() を呼んで一元的に行う（A-2）。ここで別途 checkRateLimit を
+  // 呼ぶと同一 key・本文が二重計上され、RPC 側の dedup と衝突するため呼ばない。
   const supabase = await createClient();
   const user = await getUser();
 
@@ -340,20 +372,26 @@ export async function createDiscussionPost(
     parentPostId = parent.id;
   }
 
-  const { data: inserted, error } = await supabase
-    .from("discussion_posts")
-    .insert({
-      thread_id: threadId,
-      anonymous_name: displayName,
-      body: normalizePostBody(bodyRaw),
+  // 挿入は security definer RPC 経由（DB 直叩きバイパス防止 / A-2）。
+  // RPC 内部でもレート制限・URL 数モデレーションを再チェックする（多層防御）。
+  const voterKey = await getOrCreateVoterKey();
+  const { data: insertedId, error } = await supabase.rpc(
+    "create_discussion_post",
+    {
+      target_thread_id: threadId,
+      post_body: normalizePostBody(bodyRaw),
+      post_anonymous_name: displayName,
+      voter_key: voterKey,
       parent_post_id: parentPostId,
-    })
-    .select("id")
-    .single();
+      dedup_body: normalizePostBody(bodyRaw),
+    },
+  );
 
   if (error) {
-    return { error: error.message };
+    return { error: mapInsertRpcError(error.message) };
   }
+
+  const inserted = insertedId ? { id: insertedId as string } : null;
 
   await registerThreadParticipant(threadId);
 
@@ -412,21 +450,21 @@ export async function voteDiscussionPoll(
     return { error: "選択肢が見つかりません。" };
   }
 
-  const allowed = await checkRateLimit("reaction");
-  if (!allowed) return { error: RATE_LIMIT_MESSAGE };
-
+  // レート制限は vote_discussion_poll RPC 内部で行う（A-2）。
+  // 挿入は security definer RPC 経由（DB 直叩きバイパス防止）。
   const voterKey = await getOrCreateVoterKey();
-  const { error } = await supabase.from("discussion_poll_votes").insert({
-    thread_id: threadId,
-    option_id: optionId,
+  const { error } = await supabase.rpc("vote_discussion_poll", {
+    target_thread_id: threadId,
+    target_option_id: optionId,
     voter_key: voterKey,
   });
 
   if (error) {
-    if (error.code === "23505") {
+    // 二重投票（unique 制約違反 23505）は専用メッセージに。
+    if (error.code === "23505" || /duplicate key|23505/i.test(error.message)) {
       return { error: "このセッションにはすでに投票済みです。" };
     }
-    return { error: error.message };
+    return { error: mapInsertRpcError(error.message) };
   }
 
   revalidatePath(`/threads/${threadId}`);

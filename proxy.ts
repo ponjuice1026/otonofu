@@ -5,6 +5,33 @@ const VIEW_COOKIE = "otonofu_viewed_threads";
 const VIEW_COOKIE_MAX_AGE = 60 * 60 * 6;
 const MAX_TRACKED = 200;
 
+// 閲覧者識別用 cookie（lib/threads/voter.ts と同じ名前）。
+const VOTER_COOKIE = "otonofu_poll_voter";
+
+/**
+ * viewer_hash を組み立てる。voter cookie（無ければ x-forwarded-for の
+ * 先頭 IP）と salt(VIEW_HASH_SALT、無ければ Supabase URL)を sha256 して
+ * サーバ側で決まる識別子にする。クライアントは salt を知らないため、
+ * 任意の viewer_hash を偽装して水増しすることはできない。
+ */
+async function buildViewerHash(
+  request: NextRequest,
+  supabaseUrl: string,
+): Promise<string | null> {
+  const voter = request.cookies.get(VOTER_COOKIE)?.value?.trim();
+  const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
+  const ip = forwardedFor.split(",")[0]?.trim();
+  const subject = voter && voter.length >= 16 ? voter : ip;
+  if (!subject) return null;
+
+  const salt = process.env.VIEW_HASH_SALT ?? supabaseUrl;
+  const data = new TextEncoder().encode(`${salt}:${subject}`);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const THREAD_DETAIL_RE = /^\/threads\/([^/]+)\/?$/;
@@ -33,22 +60,28 @@ async function trackThreadView(
   const threadId = match[1];
   if (!UUID_RE.test(threadId)) return;
 
+  // クライアント cookie による dedup（DB 負荷軽減のため残す。ただし
+  // これは信頼境界ではない。実際の重複排除は DB 側 viewer_hash で行う）。
   const viewedRaw = request.cookies.get(VIEW_COOKIE)?.value ?? "";
   const viewed = viewedRaw.split(",").filter((value) => value.length > 0);
   if (viewed.includes(threadId)) return;
 
+  // サーバ側で決まる viewer_hash を作り、重複排除つき RPC を呼ぶ（A-3）。
+  const viewerHash = await buildViewerHash(request, supabaseUrl);
+  if (!viewerHash) return;
+
   try {
-    await fetch(`${supabaseUrl}/rest/v1/rpc/increment_thread_views`, {
+    await fetch(`${supabaseUrl}/rest/v1/rpc/increment_thread_views_dedup`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
       },
-      body: JSON.stringify({ target_id: threadId }),
+      body: JSON.stringify({ target_id: threadId, viewer_hash: viewerHash }),
     });
   } catch (err) {
-    console.error("[proxy] increment_thread_views:", err);
+    console.error("[proxy] increment_thread_views_dedup:", err);
     return;
   }
 

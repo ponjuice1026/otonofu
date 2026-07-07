@@ -14,6 +14,7 @@ import { syncReviewSession } from "@/lib/reviews/review-session";
 import type { AlbumCriteriaRatings } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { checkRateLimit, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
 
 export type RatingActionState = {
   error?: string;
@@ -85,6 +86,11 @@ export async function submitAlbumReview(
 
     const album = await getAlbumById(albumId);
     if (!album) return { error: "アルバムが見つかりません。" };
+
+    // レート制限（要ログインなので key はユーザー）。
+    // 短時間の大量レビュー投稿（スパム・スコア操作）を抑止する。
+    const allowed = await checkRateLimit("review");
+    if (!allowed) return { error: RATE_LIMIT_MESSAGE };
 
     const supabase = await createClient();
     const now = new Date().toISOString();
