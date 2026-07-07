@@ -5,14 +5,22 @@ import { deleteDiscussionPost } from "@/app/threads/actions";
 
 type DeletePostButtonProps = {
   postId: string;
+  /** 本人による自己削除か（false は管理者削除）。確認文言のみに影響。 */
+  isOwner?: boolean;
 };
 
-export function DeletePostButton({ postId }: DeletePostButtonProps) {
+export function DeletePostButton({
+  postId,
+  isOwner = false,
+}: DeletePostButtonProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   function handleClick() {
-    if (!confirm("このコメントを削除しますか？（管理者）")) return;
+    const message = isOwner
+      ? "このコメントを削除しますか？"
+      : "このコメントを削除しますか？（管理者）";
+    if (!confirm(message)) return;
 
     setError(null);
     startTransition(async () => {

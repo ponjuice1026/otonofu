@@ -812,6 +812,15 @@ body {
   color: var(--foreground);
 }
 
+/* 5ch 式スレ内ID。薄色・等幅で同一投稿者の見分けだけを補助する。 */
+.reddit-comment__local-id {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75em;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
 .reddit-comment__time {
   color: var(--muted);
 }

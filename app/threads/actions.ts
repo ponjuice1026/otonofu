@@ -24,6 +24,8 @@ import {
   validateTitle,
 } from "@/lib/threads/validate";
 import { getOrCreateVoterKey, getVoterKey } from "@/lib/threads/voter";
+import { computeThreadLocalId, jstDateKey } from "@/lib/threads/thread-id";
+import { resolveThreadIdSalt } from "@/lib/threads/thread-id-salt";
 import { registerThreadParticipant } from "@/lib/data/poll-participants";
 import { buildViewOnlyPollOptionInput } from "@/lib/threads/poll-defaults";
 import { createNotification } from "@/lib/data/notify";
@@ -359,10 +361,11 @@ export async function createDiscussionPost(
   }
 
   let parentPostId: string | null = null;
+  let parentAuthorId: string | null = null;
   if (replyToRaw) {
     const { data: parent, error: parentError } = await supabase
       .from("discussion_posts")
-      .select("id, thread_id")
+      .select("id, thread_id, author_id")
       .eq("id", replyToRaw)
       .maybeSingle();
 
@@ -370,11 +373,23 @@ export async function createDiscussionPost(
       return { error: "返信先のコメントが見つかりません。" };
     }
     parentPostId = parent.id;
+    parentAuthorId = parent.author_id ?? null;
   }
+
+  // 5ch 式スレ内ID をサーバー側で計算する（生 key は DB に渡さない）。
+  // 匿名は voter_key、ログインは user_id を identityKey に用いる。
+  const voterKey = await getOrCreateVoterKey();
+  const identityKey = user ? `user:${user.id}` : `voter:${voterKey}`;
+  const threadLocalId = computeThreadLocalId({
+    identityKey,
+    threadId,
+    jstDate: jstDateKey(new Date()),
+    salt: resolveThreadIdSalt(),
+  });
 
   // 挿入は security definer RPC 経由（DB 直叩きバイパス防止 / A-2）。
   // RPC 内部でもレート制限・URL 数モデレーションを再チェックする（多層防御）。
-  const voterKey = await getOrCreateVoterKey();
+  // author_id は RPC 内で auth.uid() を用いてセットする（クライアント詐称不可）。
   const { data: insertedId, error } = await supabase.rpc(
     "create_discussion_post",
     {
@@ -384,6 +399,10 @@ export async function createDiscussionPost(
       voter_key: voterKey,
       parent_post_id: parentPostId,
       dedup_body: normalizePostBody(bodyRaw),
+      // ログインユーザーが匿名表示を選んだ場合のみ true。未ログインは匿名だが
+      // author_id が入らないため公開履歴には元々出ない（false のままで問題ない）。
+      post_is_anonymous: Boolean(user && postAnonymously),
+      post_thread_local_id: threadLocalId,
     },
   );
 
@@ -395,9 +414,10 @@ export async function createDiscussionPost(
 
   await registerThreadParticipant(threadId);
 
-  // スレ主へ通知（匿名投稿者=author_id null は関数側/宛先未解決でスキップ）。
-  // discussion_posts に投稿者IDは無いため、返信先投稿者への通知は解決不可。
-  // スレッド作成者宛の通知のみ発生させる（自分自身宛は関数側でスキップ）。
+  // 通知。author_id が入ったため返信先投稿者への通知も可能になった。
+  // - 返信(parent あり): 親レスの投稿者へ post_reply。
+  // - スレ主へ: 返信でない場合は thread_reply。
+  // 自分自身宛・重複は createNotification / RPC 側でスキップされる。
   try {
     const { data: thread } = await supabase
       .from("discussion_threads")
@@ -405,9 +425,29 @@ export async function createDiscussionPost(
       .eq("id", threadId)
       .maybeSingle();
 
-    if (thread?.author_id) {
+    const threadAuthorId = thread?.author_id ?? null;
+
+    // 返信先の投稿者へ通知（親がスレ主本人＝この後のスレ主通知と重複する場合は
+    // スレ主通知側をスキップして二重通知を防ぐ）。
+    if (parentPostId && parentAuthorId) {
       await createNotification({
-        targetUserId: thread.author_id,
+        targetUserId: parentAuthorId,
+        type: "post_reply",
+        actorName: displayName,
+        threadId,
+        postId: inserted?.id ?? null,
+      });
+    }
+
+    // スレ主へ通知。ただし返信先＝スレ主本人へ既に通知済みなら重複を避ける。
+    const alreadyNotifiedThreadAuthor =
+      Boolean(parentPostId) &&
+      parentAuthorId !== null &&
+      parentAuthorId === threadAuthorId;
+
+    if (threadAuthorId && !alreadyNotifiedThreadAuthor) {
+      await createNotification({
+        targetUserId: threadAuthorId,
         type: parentPostId ? "post_reply" : "thread_reply",
         actorName: displayName,
         threadId,
@@ -610,20 +650,25 @@ export async function deleteDiscussionPost(
     return { error: "Supabase が未設定です。" };
   }
 
-  const admin = await isCurrentUserAdmin();
-  if (!admin) {
-    return { error: "削除する権限がありません。" };
-  }
-
   const supabase = await createClient();
   const { data: post, error: fetchError } = await supabase
     .from("discussion_posts")
-    .select("id, thread_id")
+    .select("id, thread_id, author_id")
     .eq("id", postId)
     .maybeSingle();
 
   if (fetchError || !post) {
     return { error: "コメントが見つかりません。" };
+  }
+
+  // 「自分のレス or 管理者」を許可する。author_id が入ったレスのみ本人削除可。
+  const user = await getUser();
+  const isOwner = Boolean(
+    user && post.author_id && post.author_id === user.id,
+  );
+  const admin = await isCurrentUserAdmin();
+  if (!isOwner && !admin) {
+    return { error: "削除する権限がありません。" };
   }
 
   const { error } = await supabase

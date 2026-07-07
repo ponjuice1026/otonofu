@@ -197,6 +197,7 @@ export default async function ThreadDetailPage({ params }: PageProps) {
         reactionStates={reactionStates}
         isAdmin={isAdmin}
         isLoggedIn={Boolean(user)}
+        currentUserId={user?.id ?? null}
         defaultDisplayName={defaultDisplayName}
       />
     </div>

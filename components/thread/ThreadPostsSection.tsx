@@ -17,6 +17,8 @@ type ThreadPostsSectionProps = {
   reactionStates: Record<string, ReactionState>;
   isAdmin: boolean;
   isLoggedIn: boolean;
+  /** 閲覧者のユーザーID。自分のレスの削除ボタン表示判定に使う（未ログインは null）。 */
+  currentUserId: string | null;
   defaultDisplayName: string | null;
 };
 
@@ -42,6 +44,7 @@ export function ThreadPostsSection({
   reactionStates,
   isAdmin,
   isLoggedIn,
+  currentUserId,
   defaultDisplayName,
 }: ThreadPostsSectionProps) {
   const [replyTo, setReplyTo] = useState<DiscussionPost | null>(null);
@@ -172,6 +175,7 @@ export function ThreadPostsSection({
           reactionStates={reactionStates}
           isAdmin={isAdmin}
           isLoggedIn={isLoggedIn}
+          currentUserId={currentUserId}
           defaultDisplayName={defaultDisplayName}
           replyToPostId={replyTo?.id ?? null}
           collapsedIds={collapsedIds}

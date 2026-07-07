@@ -133,6 +133,16 @@ export type DiscussionPost = {
   body: string;
   parentPostId: string | null;
   replyPostIds: string[];
+  /**
+   * ログイン投稿者のID。匿名表示レスでも内部保存されている。
+   * UI では「自分のレスか」の判定にのみ使い、実名表示には使わない。
+   * 既存レス・匿名未ログイン投稿は null。
+   */
+  authorId: string | null;
+  /** 匿名表示で投稿されたか。公開履歴の絞り込みに使う。 */
+  isAnonymous: boolean;
+  /** 5ch 式スレ内ID（薄色で表示）。既存レスは null。 */
+  threadLocalId: string | null;
   createdAt: string;
 };
 

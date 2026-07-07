@@ -84,6 +84,9 @@ function mapPostsWithReplies(rows: DbDiscussionPost[]): DiscussionPost[] {
     body: row.body,
     parentPostId: row.parent_post_id ?? null,
     replyPostIds: repliesByParent.get(row.id) ?? [],
+    authorId: row.author_id ?? null,
+    isAnonymous: row.is_anonymous ?? false,
+    threadLocalId: row.thread_local_id ?? null,
     createdAt: row.created_at,
   }));
 }
@@ -520,6 +523,67 @@ export async function getDiscussionPostsByThreadId(
     return mapPostsWithReplies(data as DbDiscussionPost[]);
   } catch (err) {
     console.error("[Supabase] getDiscussionPostsByThreadId:", err);
+    return [];
+  }
+}
+
+/** ユーザーページの「最近のレス」1件分。スレタイトルへのリンク用に threadTitle を含む。 */
+export type AuthoredDiscussionPost = {
+  id: string;
+  threadId: string;
+  threadTitle: string;
+  body: string;
+  createdAt: string;
+};
+
+/**
+ * 指定ユーザーが「非匿名で」投稿したレスを新しい順に返す。
+ *
+ * 匿名性厳守: is_anonymous = false のレスのみを対象とする。
+ * 匿名表示で投稿したレスは author_id が入っていても公開履歴には出さない。
+ * status = 'published' のスレッドに属するレスのみ表示する（下書きスレは除外）。
+ */
+export async function getDiscussionPostsByAuthorId(
+  authorId: string,
+  limit = 10,
+): Promise<AuthoredDiscussionPost[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("discussion_posts")
+      .select(
+        "id, thread_id, body, created_at, discussion_threads!inner ( title, status )",
+      )
+      .eq("author_id", authorId)
+      .eq("is_anonymous", false)
+      .eq("discussion_threads.status", "published")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error || !data) {
+      console.error("[Supabase] getDiscussionPostsByAuthorId:", error?.message);
+      return [];
+    }
+
+    return (
+      data as unknown as {
+        id: string;
+        thread_id: string;
+        body: string;
+        created_at: string;
+        discussion_threads: { title: string; status: string } | null;
+      }[]
+    ).map((row) => ({
+      id: row.id,
+      threadId: row.thread_id,
+      threadTitle: row.discussion_threads?.title ?? "（無題）",
+      body: row.body,
+      createdAt: row.created_at,
+    }));
+  } catch (err) {
+    console.error("[Supabase] getDiscussionPostsByAuthorId:", err);
     return [];
   }
 }

@@ -13,7 +13,10 @@ import { getReviewsByUserId } from "@/lib/data/reviews";
 import { getListsByAuthorId } from "@/lib/data/lists";
 import { getUser } from "@/lib/auth/session";
 import { ListCoverCollage } from "@/components/list/ListCoverCollage";
-import { getDiscussionThreadsByAuthorId } from "@/lib/data/threads";
+import {
+  getDiscussionPostsByAuthorId,
+  getDiscussionThreadsByAuthorId,
+} from "@/lib/data/threads";
 import { formatThreadDate } from "@/lib/threads/format";
 import { pageTitle } from "@/lib/site";
 
@@ -85,17 +88,26 @@ export default async function PublicUserPage({ params }: PageProps) {
   const viewer = await getUser();
   const isOwner = Boolean(viewer && viewer.id === id);
 
-  const [stats, reviews, threads, lists, followCounts, viewerFollows] =
-    await Promise.all([
-      getUserProfileStats(id),
-      getReviewsByUserId(id),
-      getDiscussionThreadsByAuthorId(id),
-      getListsByAuthorId(id, isOwner),
-      getFollowCounts(id),
-      viewer && !isOwner
-        ? isFollowing(viewer.id, id)
-        : Promise.resolve(false),
-    ]);
+  const [
+    stats,
+    reviews,
+    threads,
+    authoredPosts,
+    lists,
+    followCounts,
+    viewerFollows,
+  ] = await Promise.all([
+    getUserProfileStats(id),
+    getReviewsByUserId(id),
+    getDiscussionThreadsByAuthorId(id),
+    // 公開履歴は非匿名レスのみ（getDiscussionPostsByAuthorId 内で is_anonymous=false に限定）。
+    getDiscussionPostsByAuthorId(id, 10),
+    getListsByAuthorId(id, isOwner),
+    getFollowCounts(id),
+    viewer && !isOwner
+      ? isFollowing(viewer.id, id)
+      : Promise.resolve(false),
+  ]);
 
   const reviewIds = reviews.map((r) => r.id);
   const [reviewReactions, reviewCommentCounts] = await Promise.all([
@@ -277,6 +289,36 @@ export default async function PublicUserPage({ params }: PageProps) {
         ) : (
           <p className="text-sm text-neutral-500">
             まだセッションを立てていません。
+          </p>
+        )}
+      </ProfileExpandableSection>
+
+      <ProfileExpandableSection
+        id="user-posts"
+        title="最近のレス"
+        count={authoredPosts.length}
+      >
+        {authoredPosts.length > 0 ? (
+          <ul className="flex flex-col gap-2">
+            {authoredPosts.map((post) => (
+              <li key={post.id}>
+                <Link
+                  href={`/threads/${post.threadId}#post-${post.id}`}
+                  className="card-interactive block px-4 py-3"
+                >
+                  <p className="line-clamp-2 text-sm text-neutral-200">
+                    {post.body}
+                  </p>
+                  <p className="mt-2 line-clamp-1 text-xs text-neutral-500">
+                    {post.threadTitle} · {formatThreadDate(post.createdAt)}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-neutral-500">
+            まだレスがありません。
           </p>
         )}
       </ProfileExpandableSection>

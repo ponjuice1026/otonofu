@@ -21,6 +21,8 @@ type ThreadPostListProps = {
   reactionStates: Record<string, ReactionState>;
   isAdmin?: boolean;
   isLoggedIn: boolean;
+  /** 閲覧者のユーザーID。自分のレスの削除ボタン表示判定に使う。 */
+  currentUserId: string | null;
   defaultDisplayName: string | null;
   replyToPostId: string | null;
   collapsedIds: Set<string>;
@@ -39,6 +41,7 @@ type RedditCommentItemProps = {
   reactionStates: Record<string, ReactionState>;
   isAdmin: boolean;
   isLoggedIn: boolean;
+  currentUserId: string | null;
   defaultDisplayName: string | null;
   replyToPostId: string | null;
   collapsedIds: Set<string>;
@@ -55,6 +58,7 @@ function RedditCommentItem({
   reactionStates,
   isAdmin,
   isLoggedIn,
+  currentUserId,
   defaultDisplayName,
   replyToPostId,
   collapsedIds,
@@ -68,6 +72,12 @@ function RedditCommentItem({
   const descendantCount = countDiscussionPostDescendants(node);
   const hasChildren = node.children.length > 0;
   const atIndentCap = depth >= REDDIT_MAX_INDENT_DEPTH;
+  // 自分のレスか（匿名表示レスでも本人には削除ボタンを出す）。
+  // author_id は他者へ露見しない: 削除ボタンは currentUserId===authorId の
+  // 本人にのみ描画されるため、匿名投稿者の同一性は第三者に漏れない。
+  const isOwnPost =
+    currentUserId !== null && node.authorId === currentUserId;
+  const canDelete = isAdmin || isOwnPost;
 
   return (
     <div
@@ -76,10 +86,17 @@ function RedditCommentItem({
     >
       <div className="reddit-comment__header">
         <span className="reddit-comment__author">{node.anonymousName}</span>
+        {node.threadLocalId && (
+          <span className="reddit-comment__local-id text-zinc-600">
+            ID:{node.threadLocalId}
+          </span>
+        )}
         <time dateTime={node.createdAt} className="reddit-comment__time">
           {formatThreadDate(node.createdAt)}
         </time>
-        {isAdmin && <DeletePostButton postId={node.id} />}
+        {canDelete && (
+          <DeletePostButton postId={node.id} isOwner={isOwnPost} />
+        )}
       </div>
 
       <ExpandableText
@@ -157,6 +174,7 @@ function RedditCommentItem({
                 reactionStates={reactionStates}
                 isAdmin={isAdmin}
                 isLoggedIn={isLoggedIn}
+                currentUserId={currentUserId}
                 defaultDisplayName={defaultDisplayName}
                 replyToPostId={replyToPostId}
                 collapsedIds={collapsedIds}
@@ -179,6 +197,7 @@ export function ThreadPostList({
   reactionStates,
   isAdmin = false,
   isLoggedIn,
+  currentUserId,
   defaultDisplayName,
   replyToPostId,
   collapsedIds,
@@ -208,6 +227,7 @@ export function ThreadPostList({
           reactionStates={reactionStates}
           isAdmin={isAdmin}
           isLoggedIn={isLoggedIn}
+          currentUserId={currentUserId}
           defaultDisplayName={defaultDisplayName}
           replyToPostId={replyToPostId}
           collapsedIds={collapsedIds}

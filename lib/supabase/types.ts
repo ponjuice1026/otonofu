@@ -96,6 +96,12 @@ export type DbDiscussionPost = {
   anonymous_name: string;
   body: string;
   parent_post_id: string | null;
+  /** ログイン投稿者のID（匿名表示でも内部保存）。既存レス・匿名未ログインは null。 */
+  author_id: string | null;
+  /** 匿名表示で投稿されたか。公開履歴は false のみに限定する。 */
+  is_anonymous: boolean;
+  /** 5ch 式スレ内ID（日付JSTで変わる短いハッシュ）。既存レスは null。 */
+  thread_local_id: string | null;
   created_at: string;
 };
 
