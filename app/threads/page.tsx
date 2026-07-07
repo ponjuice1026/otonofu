@@ -6,6 +6,7 @@ import {
   THREADS_PAGE_SIZE,
   getDiscussionThreadCount,
   getDiscussionThreadsPage,
+  getFeaturedThreads,
   getTrendingThreads,
 } from "@/lib/data/threads";
 import { getUser } from "@/lib/auth/session";
@@ -28,12 +29,14 @@ export default async function ThreadsPage({ searchParams }: PageProps) {
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
 
-  const [newestThreads, totalCount, user, trendingThreads] = await Promise.all([
-    getDiscussionThreadsPage(page, THREADS_PAGE_SIZE, "newest"),
-    getDiscussionThreadCount(),
-    getUser(),
-    getTrendingThreads(8),
-  ]);
+  const [newestThreads, totalCount, user, trendingThreads, featuredThreads] =
+    await Promise.all([
+      getDiscussionThreadsPage(page, THREADS_PAGE_SIZE, "newest"),
+      getDiscussionThreadCount(),
+      getUser(),
+      getTrendingThreads(8),
+      getFeaturedThreads(6),
+    ]);
 
   return (
     <div className="page-shell">
@@ -66,13 +69,34 @@ export default async function ThreadsPage({ searchParams }: PageProps) {
         </p>
       )}
 
+      {featuredThreads.length > 0 && (
+        <section className="mb-14">
+          <div className="section-header">
+            <div>
+              <h2 className="section-title section-title-accent section-accent-violet">
+                運営ピックアップ
+              </h2>
+              <p className="section-desc">
+                編集部が選ぶ、いま読んでほしい話題
+              </p>
+            </div>
+          </div>
+          <TrendingThreadList
+            threads={featuredThreads}
+            layout="row"
+            showNote
+            showRank={false}
+          />
+        </section>
+      )}
+
       <section className="mb-14">
         <div className="section-header">
           <div>
             <h2 className="section-title section-title-accent section-accent-violet">
-              いま話題のセッション
+              いま一番ホット
             </h2>
-            <p className="section-desc">最近盛り上がっているセッション</p>
+            <p className="section-desc">直近で最も盛り上がっている話題</p>
           </div>
         </div>
         <TrendingThreadList threads={trendingThreads} layout="row" />
@@ -109,6 +133,15 @@ export default async function ThreadsPage({ searchParams }: PageProps) {
                     </p>
                     <p className="mt-3 text-xs text-neutral-500">
                       作成: {thread.authorName}
+                      <span
+                        className={
+                          thread.kind === "album"
+                            ? "badge badge-muted ml-2"
+                            : "badge ml-2"
+                        }
+                      >
+                        {thread.kind === "album" ? "アルバム" : "議論"}
+                      </span>
                       {thread.hasPoll && (
                         <span className="badge ml-2">投票あり</span>
                       )}{" "}

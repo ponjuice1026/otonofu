@@ -8,6 +8,7 @@ type ThreadHomeCardProps = {
   rank?: number;
   variant?: "trending" | "newest";
   featured?: boolean;
+  showNote?: boolean;
 };
 
 export function ThreadHomeCard({
@@ -15,6 +16,7 @@ export function ThreadHomeCard({
   rank,
   variant = "trending",
   featured = false,
+  showNote = false,
 }: ThreadHomeCardProps) {
   return (
     <Link
@@ -35,11 +37,18 @@ export function ThreadHomeCard({
             ★
           </span>
         ) : null}
+        <span className={thread.kind === "album" ? "badge badge-muted" : "badge"}>
+          {thread.kind === "album" ? "アルバム" : "議論"}
+        </span>
         {thread.hasPoll && <span className="badge">投票</span>}
       </div>
 
       {thread.matchReason && (
         <p className="thread-home-card__reason">{thread.matchReason}</p>
+      )}
+
+      {showNote && thread.featuredNote && (
+        <p className="thread-home-card__reason">"{thread.featuredNote}"</p>
       )}
 
       <h3 className="thread-home-card__title">{thread.title}</h3>

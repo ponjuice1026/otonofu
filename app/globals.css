@@ -1008,6 +1008,12 @@ body {
   color: #fde68a;
 }
 
+.badge-muted {
+  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+}
+
 .nav-link {
   border-radius: var(--radius-md);
   padding: 0.4375rem 0.75rem;

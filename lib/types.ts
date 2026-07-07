@@ -85,6 +85,9 @@ export type DiscussionThread = {
   hasPoll: boolean;
   reviewId?: string;
   albumId?: string;
+  kind: "album" | "topic";
+  featuredRank: number | null;
+  featuredNote: string | null;
   createdAt: string;
   updatedAt: string;
 };

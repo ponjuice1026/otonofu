@@ -70,6 +70,9 @@ export type AdminThreadRow = {
   viewCount: number;
   postCount: number;
   createdAt: string;
+  kind: "album" | "topic";
+  featuredRank: number | null;
+  featuredNote: string | null;
 };
 
 export async function getAdminThreads(limit = 50): Promise<AdminThreadRow[]> {
@@ -118,6 +121,9 @@ export async function getAdminThreads(limit = 50): Promise<AdminThreadRow[]> {
       viewCount: row.view_count ?? 0,
       postCount: row.discussion_posts?.[0]?.count ?? 0,
       createdAt: row.created_at,
+      kind: row.review_id ? "album" : "topic",
+      featuredRank: row.featured_rank ?? null,
+      featuredNote: row.featured_note ?? null,
     }));
   } catch (err) {
     console.error("[Supabase] getAdminThreads:", err);

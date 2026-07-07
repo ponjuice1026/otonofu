@@ -7,12 +7,16 @@ type TrendingThreadListProps = {
   threads: DiscussionThread[];
   variant?: "trending" | "newest";
   layout?: "list" | "row";
+  showNote?: boolean;
+  showRank?: boolean;
 };
 
 export function TrendingThreadList({
   threads,
   variant = "trending",
   layout = "list",
+  showNote = false,
+  showRank = true,
 }: TrendingThreadListProps) {
   if (threads.length === 0) {
     return (
@@ -31,8 +35,9 @@ export function TrendingThreadList({
           <li key={thread.id} className="thread-home-row__item">
             <ThreadHomeCard
               thread={thread}
-              rank={index + 1}
+              rank={showRank ? index + 1 : undefined}
               variant={variant}
+              showNote={showNote}
             />
           </li>
         ))}

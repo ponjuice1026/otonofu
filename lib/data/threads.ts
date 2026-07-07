@@ -60,6 +60,9 @@ function mapThread(
     hasPoll,
     reviewId: row.review_id ?? undefined,
     albumId: row.album_id ?? undefined,
+    kind: row.review_id ? "album" : "topic",
+    featuredRank: row.featured_rank ?? null,
+    featuredNote: row.featured_note ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -132,6 +135,37 @@ export async function getDiscussionThreadsPage(
   }
 }
 
+export async function getFeaturedThreads(
+  limit = 6,
+): Promise<DiscussionThread[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("discussion_threads")
+      .select("*, discussion_posts ( count ), discussion_poll_options ( count )")
+      .eq("status", "published")
+      .not("featured_rank", "is", null)
+      .order("featured_rank", { ascending: true })
+      .order("featured_at", { ascending: false })
+      .limit(limit);
+
+    if (error || !data) {
+      console.error("[Supabase] getFeaturedThreads:", error?.message);
+      return [];
+    }
+
+    const rows = data as ThreadRow[];
+    const authorIds = [...new Set(rows.map((row) => row.author_id))];
+    const authorNames = await loadAuthorNames(authorIds);
+    return rows.map((row) => mapThread(row, authorNames));
+  } catch (err) {
+    console.error("[Supabase] getFeaturedThreads:", err);
+    return [];
+  }
+}
+
 export async function getTrendingThreads(
   limit = 5,
 ): Promise<DiscussionThread[]> {
@@ -140,11 +174,13 @@ export async function getTrendingThreads(
   try {
     const supabase = await createClient();
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const recentSince = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabase
       .from("discussion_threads")
       .select("*, discussion_posts ( count ), discussion_poll_options ( count )")
       .eq("status", "published")
+      .is("featured_rank", null)
       .gte("updated_at", since)
       .order("updated_at", { ascending: false })
       .limit(Math.max(limit * 3, 12));
@@ -158,18 +194,52 @@ export async function getTrendingThreads(
     const authorIds = [...new Set(rows.map((row) => row.author_id))];
     const authorNames = await loadAuthorNames(authorIds);
 
+    const threadIds = rows.map((row) => row.id);
+    const recentPostCounts = new Map<string, number>();
+    if (threadIds.length > 0) {
+      const { data: recentPosts, error: recentPostsError } = await supabase
+        .from("discussion_posts")
+        .select("thread_id")
+        .in("thread_id", threadIds)
+        .gte("created_at", recentSince);
+
+      if (recentPostsError) {
+        console.error(
+          "[Supabase] getTrendingThreads recentPosts:",
+          recentPostsError.message,
+        );
+      } else {
+        for (const row of (recentPosts ?? []) as { thread_id: string }[]) {
+          recentPostCounts.set(
+            row.thread_id,
+            (recentPostCounts.get(row.thread_id) ?? 0) + 1,
+          );
+        }
+      }
+    }
+
     const now = Date.now();
     const scored = rows
       .map((row) => {
         const thread = mapThread(row, authorNames);
         const ageHours =
           (now - new Date(thread.updatedAt).getTime()) / (60 * 60 * 1000);
+        const recentPosts = recentPostCounts.get(row.id) ?? 0;
+        if (recentPosts === 0 && ageHours > 168) {
+          return null;
+        }
         const recencyBoost = 1 / Math.log2(Math.max(ageHours, 1) + 2);
         const score =
-          (thread.viewCount + thread.postCount * 5 + (thread.hasPoll ? 10 : 0)) *
+          (recentPosts * 12 +
+            thread.viewCount * 0.15 +
+            thread.postCount * 2 +
+            (thread.hasPoll ? 8 : 0)) *
           recencyBoost;
         return { thread, score };
       })
+      .filter((item): item is { thread: DiscussionThread; score: number } =>
+        item !== null,
+      )
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
 
