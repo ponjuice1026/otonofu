@@ -1,17 +1,23 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type {
+  DbDiscussionCategory,
   DbDiscussionPollOption,
   DbDiscussionPost,
   DbDiscussionThread,
   DbProfile,
 } from "@/lib/supabase/types";
-import type { DiscussionPost, DiscussionThread } from "@/lib/types";
+import type {
+  DiscussionPost,
+  DiscussionThread,
+  ThreadCategory,
+} from "@/lib/types";
 import type {
   ThreadDraftFormData,
   ThreadDraftSummary,
 } from "@/lib/threads/draft-form";
 import { pollOptionsToDrafts } from "@/lib/threads/draft-form";
+import { POSTS_PAGE_SIZE, postsPageRange } from "@/lib/threads/posts-pagination";
 
 type ThreadRow = DbDiscussionThread & {
   discussion_posts: { count: number }[];
@@ -45,9 +51,11 @@ async function loadAuthorNames(
 function mapThread(
   row: ThreadRow,
   authorNames: Map<string, string>,
+  categoryNames?: Map<string, string>,
 ): DiscussionThread {
   const postCount = row.discussion_posts?.[0]?.count ?? 0;
   const hasPoll = (row.discussion_poll_options?.[0]?.count ?? 0) > 0;
+  const categoryId = row.category_id ?? null;
   return {
     id: row.id,
     title: row.title,
@@ -60,12 +68,25 @@ function mapThread(
     hasPoll,
     reviewId: row.review_id ?? undefined,
     albumId: row.album_id ?? undefined,
+    categoryId,
+    categoryName:
+      categoryId && categoryNames ? categoryNames.get(categoryId) ?? null : null,
     kind: row.review_id ? "album" : "topic",
     featuredRank: row.featured_rank ?? null,
     featuredNote: row.featured_note ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * スレ行に含まれる category_id からカテゴリ名を解決するためのマップを引く。
+ * カテゴリ一覧（position 順）を渡すことでN+1を避ける。
+ */
+function buildCategoryNameMap(
+  categories: ThreadCategory[],
+): Map<string, string> {
+  return new Map(categories.map((c) => [c.id, c.name]));
 }
 
 function mapPostsWithReplies(rows: DbDiscussionPost[]): DiscussionPost[] {
@@ -93,12 +114,42 @@ function mapPostsWithReplies(rows: DbDiscussionPost[]): DiscussionPost[] {
 
 export const THREADS_PAGE_SIZE = 10;
 
+/** カテゴリ（板）一覧を position 順で返す。auth 非依存の公開データ。 */
+export async function getThreadCategories(): Promise<ThreadCategory[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("discussion_categories")
+      .select("id, slug, name, position")
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (error || !data) {
+      console.error("[Supabase] getThreadCategories:", error?.message);
+      return [];
+    }
+
+    return (data as DbDiscussionCategory[]).map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      position: row.position,
+    }));
+  } catch (err) {
+    console.error("[Supabase] getThreadCategories:", err);
+    return [];
+  }
+}
+
 export type ThreadSortOrder = "popular" | "newest";
 
 export async function getDiscussionThreadsPage(
   page = 1,
   pageSize = THREADS_PAGE_SIZE,
   sort: ThreadSortOrder = "popular",
+  categorySlug?: string,
 ): Promise<DiscussionThread[]> {
   if (!isSupabaseConfigured()) return [];
 
@@ -108,10 +159,27 @@ export async function getDiscussionThreadsPage(
 
   try {
     const supabase = await createClient();
+
+    // カテゴリ一覧はカテゴリ名解決とスラッグ→ID変換の両方に使う。
+    const categories = await getThreadCategories();
+    const categoryNames = buildCategoryNameMap(categories);
+
+    let categoryId: string | null | undefined;
+    if (categorySlug) {
+      categoryId =
+        categories.find((c) => c.slug === categorySlug)?.id ?? null;
+      // 存在しない slug が来たら結果は空にする（不整合を避ける）。
+      if (categoryId === null) return [];
+    }
+
     let query = supabase
       .from("discussion_threads")
       .select("*, discussion_posts ( count ), discussion_poll_options ( count )")
       .eq("status", "published");
+
+    if (categoryId) {
+      query = query.eq("category_id", categoryId);
+    }
 
     if (sort === "newest") {
       query = query.order("created_at", { ascending: false });
@@ -131,7 +199,7 @@ export async function getDiscussionThreadsPage(
     const rows = data as ThreadRow[];
     const authorIds = [...new Set(rows.map((row) => row.author_id))];
     const authorNames = await loadAuthorNames(authorIds);
-    return rows.map((row) => mapThread(row, authorNames));
+    return rows.map((row) => mapThread(row, authorNames, categoryNames));
   } catch (err) {
     console.error("[Supabase] getDiscussionThreadsPage:", err);
     return [];
@@ -436,15 +504,31 @@ export async function getDiscussionThreadsByAuthorId(
   }
 }
 
-export async function getDiscussionThreadCount(): Promise<number> {
+export async function getDiscussionThreadCount(
+  categorySlug?: string,
+): Promise<number> {
   if (!isSupabaseConfigured()) return 0;
 
   try {
     const supabase = await createClient();
-    const { count, error } = await supabase
+
+    let categoryId: string | null | undefined;
+    if (categorySlug) {
+      const categories = await getThreadCategories();
+      categoryId = categories.find((c) => c.slug === categorySlug)?.id ?? null;
+      if (categoryId === null) return 0;
+    }
+
+    let query = supabase
       .from("discussion_threads")
       .select("*", { count: "exact", head: true })
       .eq("status", "published");
+
+    if (categoryId) {
+      query = query.eq("category_id", categoryId);
+    }
+
+    const { count, error } = await query;
 
     if (error) {
       console.error("[Supabase] getDiscussionThreadCount:", error.message);
@@ -494,33 +578,123 @@ export async function getDiscussionThreadById(
     }
 
     const row = data as ThreadRow;
-    const authorNames = await loadAuthorNames([row.author_id]);
-    return mapThread(row, authorNames);
+    const [authorNames, categories] = await Promise.all([
+      loadAuthorNames([row.author_id]),
+      row.category_id ? getThreadCategories() : Promise.resolve([]),
+    ]);
+    return mapThread(row, authorNames, buildCategoryNameMap(categories));
   } catch (err) {
     console.error("[Supabase] getDiscussionThreadById:", err);
     return null;
   }
 }
 
-export async function getDiscussionPostsByThreadId(
+/** スレのルート（親なし）レス総数。レスページャの分母に使う。 */
+export async function getDiscussionRootPostCount(
   threadId: string,
-): Promise<DiscussionPost[]> {
-  if (!isSupabaseConfigured()) return [];
+): Promise<number> {
+  if (!isSupabaseConfigured()) return 0;
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    const { count, error } = await supabase
+      .from("discussion_posts")
+      .select("*", { count: "exact", head: true })
+      .eq("thread_id", threadId)
+      .is("parent_post_id", null);
+
+    if (error) {
+      console.error("[Supabase] getDiscussionRootPostCount:", error.message);
+      return 0;
+    }
+
+    return count ?? 0;
+  } catch (err) {
+    console.error("[Supabase] getDiscussionRootPostCount:", err);
+    return 0;
+  }
+}
+
+/**
+ * スレのレスを「ルートレス単位」でページングして取得する。
+ *
+ * 1) created_at 昇順でルート（parent_post_id null）レスをページ分だけ取る。
+ * 2) それらルートの子孫（返信）を parent_post_id チェーンで全部集める。
+ * 3) ルート＋子孫をまとめて mapPostsWithReplies に渡す。
+ *
+ * 返り値はページ内で返信ツリーが完結するので、buildDiscussionPostTree /
+ * buildInitialCollapsedIds はそのまま使える（親がページ外にならない）。
+ */
+export async function getDiscussionPostsByThreadId(
+  threadId: string,
+  page = 1,
+  pageSize = POSTS_PAGE_SIZE,
+): Promise<DiscussionPost[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const { from, to } = postsPageRange(page, pageSize);
+
+  try {
+    const supabase = await createClient();
+
+    // 1) このページのルートレス。
+    const { data: rootData, error: rootError } = await supabase
       .from("discussion_posts")
       .select("*")
       .eq("thread_id", threadId)
-      .order("created_at", { ascending: true });
+      .is("parent_post_id", null)
+      .order("created_at", { ascending: true })
+      .range(from, to);
 
-    if (error || !data) {
-      console.error("[Supabase] getDiscussionPostsByThreadId:", error?.message);
+    if (rootError || !rootData) {
+      console.error(
+        "[Supabase] getDiscussionPostsByThreadId roots:",
+        rootError?.message,
+      );
       return [];
     }
 
-    return mapPostsWithReplies(data as DbDiscussionPost[]);
+    const rootRows = rootData as DbDiscussionPost[];
+    if (rootRows.length === 0) return [];
+
+    // 2) ルートの子孫を BFS で辿って集める。返信の深さは限られるため反復で十分。
+    const collected = new Map<string, DbDiscussionPost>();
+    for (const row of rootRows) {
+      collected.set(row.id, row);
+    }
+
+    let frontier = rootRows.map((row) => row.id);
+    // 安全のため深さに上限を設ける（無限ループ防止）。
+    for (let depth = 0; depth < 50 && frontier.length > 0; depth += 1) {
+      const { data: childData, error: childError } = await supabase
+        .from("discussion_posts")
+        .select("*")
+        .eq("thread_id", threadId)
+        .in("parent_post_id", frontier);
+
+      if (childError) {
+        console.error(
+          "[Supabase] getDiscussionPostsByThreadId children:",
+          childError.message,
+        );
+        break;
+      }
+
+      const children = (childData ?? []) as DbDiscussionPost[];
+      const nextFrontier: string[] = [];
+      for (const child of children) {
+        if (collected.has(child.id)) continue;
+        collected.set(child.id, child);
+        nextFrontier.push(child.id);
+      }
+      frontier = nextFrontier;
+    }
+
+    const rows = [...collected.values()].sort((a, b) =>
+      a.created_at.localeCompare(b.created_at),
+    );
+
+    return mapPostsWithReplies(rows);
   } catch (err) {
     console.error("[Supabase] getDiscussionPostsByThreadId:", err);
     return [];
@@ -628,7 +802,7 @@ export async function getThreadDraftForEdit(
     const supabase = await createClient();
     const { data: thread, error: threadError } = await supabase
       .from("discussion_threads")
-      .select("id, author_id, title, body, status")
+      .select("id, author_id, title, body, status, category_id")
       .eq("id", draftId)
       .maybeSingle();
 
@@ -655,6 +829,7 @@ export async function getThreadDraftForEdit(
       id: thread.id,
       title: thread.title === "（無題）" ? "" : thread.title,
       body: thread.body,
+      categoryId: thread.category_id ?? null,
       enablePoll: pollState.enablePoll,
       addViewOnlyOption: pollState.addViewOnlyOption,
       pollOptions: pollState.pollOptions,

@@ -4,6 +4,7 @@ import { ReviewCard } from "@/components/review/ReviewCard";
 import { DeleteThreadButton } from "@/components/thread/DeleteThreadButton";
 import { ThreadPoll } from "@/components/thread/ThreadPoll";
 import { ThreadPostsSection } from "@/components/thread/ThreadPostsSection";
+import { ThreadPostsPagination } from "@/components/thread/ThreadPostsPagination";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { ensureProfile } from "@/lib/auth/profile";
 import { getUser } from "@/lib/auth/session";
@@ -14,8 +15,13 @@ import { getPostReactionStates, getReviewReactionStates } from "@/lib/data/react
 import { getReviewCommentCounts } from "@/lib/data/review-comments";
 import {
   getDiscussionPostsByThreadId,
+  getDiscussionRootPostCount,
   getDiscussionThreadById,
 } from "@/lib/data/threads";
+import {
+  POSTS_PAGE_SIZE,
+  normalizePostsPage,
+} from "@/lib/threads/posts-pagination";
 import { getReviewForSessionThread } from "@/lib/data/reviews";
 import { buildReviewCardCoverProps } from "@/lib/reviews/review-card-cover";
 import { UserLink } from "@/components/user/UserLink";
@@ -25,6 +31,7 @@ import { pageTitle, siteUrl } from "@/lib/site";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ page?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -64,12 +71,18 @@ export async function generateMetadata({ params }: PageProps) {
   };
 }
 
-export default async function ThreadDetailPage({ params }: PageProps) {
+export default async function ThreadDetailPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { id } = await params;
+  const { page: pageParam } = await searchParams;
+  const postsPage = normalizePostsPage(Number(pageParam) || 1);
 
-  const [thread, posts, poll, user, isAdmin] = await Promise.all([
+  const [thread, posts, rootPostCount, poll, user, isAdmin] = await Promise.all([
     getDiscussionThreadById(id),
-    getDiscussionPostsByThreadId(id),
+    getDiscussionPostsByThreadId(id, postsPage, POSTS_PAGE_SIZE),
+    getDiscussionRootPostCount(id),
     getDiscussionPoll(id),
     getUser(),
     isCurrentUserAdmin(),
@@ -191,15 +204,32 @@ export default async function ThreadDetailPage({ params }: PageProps) {
 
       {poll && <ThreadPoll poll={poll} canAddOption={canAddOption} />}
 
-      <ThreadPostsSection
-        threadId={thread.id}
-        posts={posts}
-        reactionStates={reactionStates}
-        isAdmin={isAdmin}
-        isLoggedIn={Boolean(user)}
-        currentUserId={user?.id ?? null}
-        defaultDisplayName={defaultDisplayName}
-      />
+      <div id="comments" className="scroll-mt-4">
+        {rootPostCount > POSTS_PAGE_SIZE && (
+          <ThreadPostsPagination
+            threadId={thread.id}
+            currentPage={postsPage}
+            rootPostCount={rootPostCount}
+          />
+        )}
+
+        <ThreadPostsSection
+          threadId={thread.id}
+          posts={posts}
+          reactionStates={reactionStates}
+          isAdmin={isAdmin}
+          isLoggedIn={Boolean(user)}
+          currentUserId={user?.id ?? null}
+          defaultDisplayName={defaultDisplayName}
+          totalPostCount={thread.postCount}
+        />
+
+        <ThreadPostsPagination
+          threadId={thread.id}
+          currentPage={postsPage}
+          rootPostCount={rootPostCount}
+        />
+      </div>
     </div>
   );
 }

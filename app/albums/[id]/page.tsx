@@ -82,8 +82,8 @@ export async function generateMetadata({
       ? `平均評価 ${album.avgRating.toFixed(1)}/10・${album.ratingCount.toLocaleString("ja-JP")}件のレビュー。`
       : "まだレビューはありません。";
   const description = `${artistName ? `${artistName}の` : ""}アルバム『${album.title}』のレビューと評価。${ratingText}オトノフで感想を共有しよう。`;
-  const coverUrl = albumCoverSrc(album);
 
+  // OG/Twitter 画像は同ルートの opengraph-image.tsx（動的カード）が自動供給する。
   return {
     title,
     description,
@@ -92,13 +92,11 @@ export async function generateMetadata({
       description,
       type: "music.album",
       url: siteUrl(`/albums/${album.id}`),
-      images: coverUrl ? [{ url: coverUrl }] : undefined,
     },
     twitter: {
-      card: coverUrl ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      images: coverUrl ? [coverUrl] : undefined,
     },
     alternates: {
       canonical: siteUrl(`/albums/${album.id}`),
@@ -193,11 +191,35 @@ export default async function AlbumDetailPage({
       : {}),
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "ホーム", item: siteUrl("/") },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "アルバム",
+        item: siteUrl("/albums"),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: album.title,
+        item: siteUrl(`/albums/${album.id}`),
+      },
+    ],
+  };
+
   return (
     <div className="page-shell">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(albumJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <Link
         href={backLink.href}

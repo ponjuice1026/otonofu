@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThreadPagination } from "@/components/thread/ThreadPagination";
+import { ThreadCategoryNav } from "@/components/thread/ThreadCategoryNav";
 import { TrendingThreadList } from "@/components/thread/TrendingThreadList";
 import { formatThreadDate } from "@/lib/threads/format";
 import {
@@ -7,6 +8,7 @@ import {
   getDiscussionThreadCount,
   getDiscussionThreadsPage,
   getFeaturedThreads,
+  getThreadCategories,
   getTrendingThreads,
 } from "@/lib/data/threads";
 import { getUser } from "@/lib/auth/session";
@@ -22,21 +24,33 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; category?: string }>;
 };
 
 export default async function ThreadsPage({ searchParams }: PageProps) {
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, category: categoryParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
+  const categorySlug = categoryParam?.trim() || undefined;
 
-  const [newestThreads, totalCount, user, trendingThreads, featuredThreads] =
-    await Promise.all([
-      getDiscussionThreadsPage(page, THREADS_PAGE_SIZE, "newest"),
-      getDiscussionThreadCount(),
-      getUser(),
-      getTrendingThreads(8),
-      getFeaturedThreads(6),
-    ]);
+  const [
+    newestThreads,
+    totalCount,
+    user,
+    trendingThreads,
+    featuredThreads,
+    categories,
+  ] = await Promise.all([
+    getDiscussionThreadsPage(page, THREADS_PAGE_SIZE, "newest", categorySlug),
+    getDiscussionThreadCount(categorySlug),
+    getUser(),
+    getTrendingThreads(8),
+    getFeaturedThreads(6),
+    getThreadCategories(),
+  ]);
+
+  const activeCategory = categorySlug
+    ? categories.find((c) => c.slug === categorySlug) ?? null
+    : null;
 
   return (
     <div className="page-shell">
@@ -106,7 +120,7 @@ export default async function ThreadsPage({ searchParams }: PageProps) {
         <div className="section-header">
           <div>
             <h2 className="section-title section-title-accent section-accent-violet">
-              すべてのセッション
+              {activeCategory ? activeCategory.name : "すべてのセッション"}
             </h2>
             <p className="section-desc">
               {totalCount.toLocaleString("ja-JP")} 件 · 作成日時の新しい順
@@ -114,8 +128,17 @@ export default async function ThreadsPage({ searchParams }: PageProps) {
           </div>
         </div>
 
+        <ThreadCategoryNav
+          categories={categories}
+          activeSlug={activeCategory?.slug ?? null}
+        />
+
         {newestThreads.length === 0 ? (
-          <div className="empty-state py-10">まだセッションがありません。</div>
+          <div className="empty-state py-10">
+            {activeCategory
+              ? "このカテゴリにはまだセッションがありません。"
+              : "まだセッションがありません。"}
+          </div>
         ) : (
           <>
             <ul className="flex flex-col gap-2">
@@ -133,6 +156,11 @@ export default async function ThreadsPage({ searchParams }: PageProps) {
                     </p>
                     <p className="mt-3 text-xs text-neutral-500">
                       作成: {thread.authorName}
+                      {thread.categoryName && (
+                        <span className="badge badge-muted ml-2">
+                          {thread.categoryName}
+                        </span>
+                      )}
                       <span
                         className={
                           thread.kind === "album"
@@ -154,7 +182,11 @@ export default async function ThreadsPage({ searchParams }: PageProps) {
               ))}
             </ul>
 
-            <ThreadPagination currentPage={page} totalCount={totalCount} />
+            <ThreadPagination
+              currentPage={page}
+              totalCount={totalCount}
+              categorySlug={categorySlug}
+            />
           </>
         )}
       </section>

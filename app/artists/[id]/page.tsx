@@ -52,8 +52,8 @@ export async function generateMetadata({ params }: PageProps) {
 
   const title = pageTitle(`${artist.name} のレビュー・評価`);
   const description = `${artist.name}のアーティストページ。ディスコグラフィとレビュー・評価をチェックできる。オトノフで感想を共有しよう。`;
-  const imageSrc = artistImageSrc(artist);
 
+  // OG/Twitter 画像は同ルートの opengraph-image.tsx（動的カード）が自動供給する。
   return {
     title,
     description,
@@ -62,13 +62,11 @@ export async function generateMetadata({ params }: PageProps) {
       description,
       type: "profile",
       url: siteUrl(`/artists/${artist.id}`),
-      images: imageSrc ? [{ url: imageSrc }] : undefined,
     },
     twitter: {
-      card: imageSrc ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      images: imageSrc ? [imageSrc] : undefined,
     },
     alternates: {
       canonical: siteUrl(`/artists/${artist.id}`),
@@ -115,11 +113,35 @@ export default async function ArtistDetailPage({ params }: PageProps) {
     ...(artist.bio ? { description: artist.bio } : {}),
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "ホーム", item: siteUrl("/") },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "アーティスト",
+        item: siteUrl("/artists"),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: artist.name,
+        item: siteUrl(`/artists/${artist.id}`),
+      },
+    ],
+  };
+
   return (
     <div className="page-shell">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(artistJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <Link href={backLink.href} className="link-accent mb-6 inline-block text-sm hover:underline">
         {backLink.label}

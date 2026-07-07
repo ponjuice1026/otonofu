@@ -9,6 +9,8 @@ export type ThreadDraftFormData = {
   id: string;
   title: string;
   body: string;
+  /** 紐付くカテゴリ（板）のID。未分類は null。 */
+  categoryId: string | null;
   enablePoll: boolean;
   addViewOnlyOption: boolean;
   pollOptions: PollOptionDraft[];

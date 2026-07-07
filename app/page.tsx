@@ -30,6 +30,39 @@ import {
   pickHomeTrendingThreadFeed,
 } from "@/lib/threads/home-feed";
 import { getFollowingRecentReviews } from "@/lib/data/follows";
+import {
+  pageTitle,
+  siteUrl,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/site";
+
+export const metadata = {
+  alternates: { canonical: siteUrl("/") },
+  openGraph: {
+    title: pageTitle(),
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+};
+
+const homeJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  inLanguage: "ja-JP",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: siteUrl("/search?q={search_term_string}"),
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
 
 export const dynamic = "force-dynamic";
 
@@ -184,6 +217,10 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <div className="page-shell">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+      />
       <section className="home-hero">
         <div className="home-hero__inner">
           <div className="home-hero__icon-wrap">

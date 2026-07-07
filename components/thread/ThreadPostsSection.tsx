@@ -20,6 +20,8 @@ type ThreadPostsSectionProps = {
   /** 閲覧者のユーザーID。自分のレスの削除ボタン表示判定に使う（未ログインは null）。 */
   currentUserId: string | null;
   defaultDisplayName: string | null;
+  /** スレ全体のコメント数（ページ跨ぎの総数）。未指定なら表示中の件数。 */
+  totalPostCount?: number;
 };
 
 function collectAncestorIds(
@@ -46,6 +48,7 @@ export function ThreadPostsSection({
   isLoggedIn,
   currentUserId,
   defaultDisplayName,
+  totalPostCount,
 }: ThreadPostsSectionProps) {
   const [replyTo, setReplyTo] = useState<DiscussionPost | null>(null);
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() =>
@@ -167,7 +170,7 @@ export function ThreadPostsSection({
     <>
       <section className="mb-10">
         <h2 className="mb-4 text-lg font-semibold text-zinc-100">
-          コメント ({posts.length})
+          コメント ({(totalPostCount ?? posts.length).toLocaleString("ja-JP")})
         </h2>
         <ThreadPostList
           threadId={threadId}

@@ -7,7 +7,9 @@ export const metadata = {
   title: pageTitle("ジャンル"),
 };
 
-export const dynamic = "force-dynamic";
+// ジャンル一覧は auth 非依存の公開データ（getGenreSummaries はユーザー個別表示・
+// cookie を一切参照しない）。集計が変わる頻度は低いため 5 分の ISR に置く。
+export const revalidate = 300;
 
 function coverSrc(cover: {
   coverUrl?: string;

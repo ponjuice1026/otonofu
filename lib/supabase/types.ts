@@ -74,6 +74,14 @@ export type DbProfile = {
   created_at: string;
 };
 
+export type DbDiscussionCategory = {
+  id: string;
+  slug: string;
+  name: string;
+  position: number;
+  created_at: string;
+};
+
 export type DbDiscussionThread = {
   id: string;
   author_id: string;
@@ -83,6 +91,7 @@ export type DbDiscussionThread = {
   view_count: number;
   review_id: string | null;
   album_id: string | null;
+  category_id: string | null;
   featured_rank: number | null;
   featured_note: string | null;
   featured_at: string | null;

@@ -12,6 +12,7 @@ import {
 } from "@/components/thread/PollOptionPicker";
 import { PollResultPreview } from "@/components/thread/PollResults";
 import type { ThreadDraftFormData } from "@/lib/threads/draft-form";
+import type { ThreadCategory } from "@/lib/types";
 import {
   buildPollResultPreviewRows,
   defaultPollOptionDrafts,
@@ -24,11 +25,13 @@ const initialState: ThreadActionState = {};
 
 type CreateThreadFormProps = {
   draft?: ThreadDraftFormData | null;
+  categories?: ThreadCategory[];
   showSavedMessage?: boolean;
 };
 
 export function CreateThreadForm({
   draft = null,
+  categories = [],
   showSavedMessage = false,
 }: CreateThreadFormProps) {
   const [state, formAction, pending] = useActionState(
@@ -122,6 +125,27 @@ export function CreateThreadForm({
           className="resize-y rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 focus:border-amber-500/50 focus:outline-none"
         />
       </label>
+
+      {categories.length > 0 && (
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-zinc-400">カテゴリ（任意）</span>
+          <select
+            name="categoryId"
+            defaultValue={draft?.categoryId ?? ""}
+            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 focus:border-amber-500/50 focus:outline-none"
+          >
+            <option value="">未分類</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <span className="text-xs text-zinc-500">
+            板を選ぶと一覧で絞り込めます。未選択のままでも作成できます。
+          </span>
+        </label>
+      )}
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
         <label className="flex cursor-pointer items-center gap-2 text-sm">

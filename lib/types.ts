@@ -73,6 +73,13 @@ export type TrackRating = {
   userId: string;
 };
 
+export type ThreadCategory = {
+  id: string;
+  slug: string;
+  name: string;
+  position: number;
+};
+
 export type DiscussionThread = {
   id: string;
   title: string;
@@ -85,6 +92,10 @@ export type DiscussionThread = {
   hasPoll: boolean;
   reviewId?: string;
   albumId?: string;
+  /** 紐付くカテゴリ（板）のID。未分類は null。 */
+  categoryId: string | null;
+  /** カテゴリ名（データ層で解決）。未分類は null。 */
+  categoryName: string | null;
   kind: "album" | "topic";
   featuredRank: number | null;
   featuredNote: string | null;

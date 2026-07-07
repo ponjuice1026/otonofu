@@ -12,10 +12,20 @@ import {
 import { getUser } from "@/lib/auth/session";
 import { getRankedAlbums, getRecommendedAlbums } from "@/lib/data/albums";
 import { getArtistNameMapForIds } from "@/lib/data/artists";
-import { pageTitle } from "@/lib/site";
+import { pageTitle, siteUrl } from "@/lib/site";
+
+const CHARTS_DESCRIPTION =
+  "オトノフのアルバムランキング。ユーザー評価の高いアルバムや期間・ジャンル別の人気作をチェックできる。";
 
 export const metadata = {
   title: pageTitle("ランキング"),
+  description: CHARTS_DESCRIPTION,
+  alternates: { canonical: siteUrl("/charts") },
+  openGraph: {
+    title: pageTitle("ランキング"),
+    description: CHARTS_DESCRIPTION,
+    url: siteUrl("/charts"),
+  },
 };
 
 export const dynamic = "force-dynamic";

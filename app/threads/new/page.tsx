@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { CreateThreadForm } from "@/components/thread/CreateThreadForm";
 import { getUser } from "@/lib/auth/session";
 import {
+  getThreadCategories,
   getThreadDraftForEdit,
   getUserThreadDrafts,
 } from "@/lib/data/threads";
@@ -26,9 +27,10 @@ export default async function NewThreadPage({ searchParams }: PageProps) {
   }
 
   const { draft: draftId, saved } = await searchParams;
-  const [draft, drafts] = await Promise.all([
+  const [draft, drafts, categories] = await Promise.all([
     draftId ? getThreadDraftForEdit(draftId, user.id) : Promise.resolve(null),
     getUserThreadDrafts(user.id),
+    getThreadCategories(),
   ]);
 
   if (draftId && !draft) {
@@ -87,6 +89,7 @@ export default async function NewThreadPage({ searchParams }: PageProps) {
       <CreateThreadForm
         key={draft?.id ?? "new"}
         draft={draft}
+        categories={categories}
         showSavedMessage={saved === "1"}
       />
     </div>

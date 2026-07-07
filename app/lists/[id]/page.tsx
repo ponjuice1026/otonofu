@@ -7,7 +7,7 @@ import { AlbumSearchAdd } from "@/components/list/AlbumSearchAdd";
 import { ListItemControls } from "@/components/list/ListItemControls";
 import { ListOwnerActions } from "@/components/list/ListOwnerActions";
 import { UserLink } from "@/components/user/UserLink";
-import { pageTitle } from "@/lib/site";
+import { pageTitle, siteUrl } from "@/lib/site";
 import type { UserListItem } from "@/lib/types";
 
 type PageProps = {
@@ -34,7 +34,12 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: pageTitle(list.title),
     description,
-    openGraph: { title: pageTitle(list.title), description },
+    alternates: { canonical: siteUrl(`/lists/${list.id}`) },
+    openGraph: {
+      title: pageTitle(list.title),
+      description,
+      url: siteUrl(`/lists/${list.id}`),
+    },
   };
 }
 

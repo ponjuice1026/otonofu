@@ -10,7 +10,9 @@ import { getGenreBySlug } from "@/lib/genres";
 import { getArtistNameMapForIds } from "@/lib/data/artists";
 import { pageTitle } from "@/lib/site";
 
-export const dynamic = "force-dynamic";
+// ジャンル別アルバム一覧は auth 非依存の公開データ（getAlbumsForGenre は
+// ユーザー個別表示・cookie を参照しない）。5 分の ISR に置く。
+export const revalidate = 300;
 
 type PageProps = {
   params: Promise<{ slug: string }>;

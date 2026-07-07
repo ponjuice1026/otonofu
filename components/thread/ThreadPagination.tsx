@@ -5,12 +5,15 @@ type ThreadPaginationProps = {
   currentPage: number;
   totalCount: number;
   pageSize?: number;
+  /** 現在の絞り込みカテゴリ slug。ページ遷移時も維持する。 */
+  categorySlug?: string;
 };
 
 export function ThreadPagination({
   currentPage,
   totalCount,
   pageSize = THREADS_PAGE_SIZE,
+  categorySlug,
 }: ThreadPaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   if (totalPages <= 1) return null;
@@ -18,7 +21,13 @@ export function ThreadPagination({
   const prevPage = currentPage > 1 ? currentPage - 1 : null;
   const nextPage = currentPage < totalPages ? currentPage + 1 : null;
 
-  const hrefFor = (page: number) => (page === 1 ? "/threads" : `/threads?page=${page}`);
+  const hrefFor = (page: number) => {
+    const params = new URLSearchParams();
+    if (categorySlug) params.set("category", categorySlug);
+    if (page > 1) params.set("page", String(page));
+    const query = params.toString();
+    return query ? `/threads?${query}` : "/threads";
+  };
 
   return (
     <nav

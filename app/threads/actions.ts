@@ -173,6 +173,10 @@ export async function saveDiscussionThread(
     const threadId = String(formData.get("threadId") ?? "").trim();
     const titleRaw = String(formData.get("title") ?? "");
     const bodyRaw = String(formData.get("body") ?? "");
+    // カテゴリは任意。未選択（空文字）は null（未分類）として扱う。
+    // 不正な値は FK 制約で弾かれる。
+    const categoryIdRaw = String(formData.get("categoryId") ?? "").trim();
+    const categoryId = categoryIdRaw.length > 0 ? categoryIdRaw : null;
     const { enablePoll, addViewOnlyOption, pollOptions: rawPollOptions } =
       parseThreadPollOptionsFromForm(formData);
 
@@ -261,6 +265,7 @@ export async function saveDiscussionThread(
           title,
           body,
           status,
+          category_id: categoryId,
         })
         .eq("id", threadId);
 
@@ -275,6 +280,7 @@ export async function saveDiscussionThread(
           title,
           body,
           status,
+          category_id: categoryId,
         })
         .select("id")
         .single();
