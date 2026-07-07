@@ -7,12 +7,26 @@ import {
   type RankingSort,
   rankingPeriodSince,
 } from "@/lib/albums/ranking-filters";
+import { BAYESIAN_PRIOR_WEIGHT, bayesianScore } from "@/lib/albums/bayesian";
 import { getArtistMetaMapForIds } from "@/lib/data/artists";
 import { getReleaseTypeLabel } from "@/lib/release-types";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Album } from "@/lib/types";
 import type { DbAlbum } from "@/lib/supabase/types";
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+/** RPC ranked_albums_bayesian の戻り行 */
+type DbRankedAlbumBayesianRow = DbAlbum & { bayesian_score: number | null };
+
+/** RPC ranked_albums_by_period の戻り行 */
+type DbRankedAlbumByPeriodRow = {
+  album_id: string;
+  period_avg: number;
+  period_count: number;
+  score: number;
+};
 
 export const ALBUMS_PAGE_SIZE = 48;
 
@@ -87,6 +101,88 @@ export async function getRecentAlbums(limit: number): Promise<Album[]> {
   }
 }
 
+/**
+ * ranked_albums_bayesian RPC が未適用(migration前)の場合のみ使うフォールバック経路。
+ * DB側は単純平均で候補を広めに取得し、JS側でベイズ補正して並べ直す。
+ * 候補プールを limit より広く取ることで、評価数の少ない満点アルバムが
+ * 単純平均上位に来て真の上位候補を押し出してしまう影響を緩和する
+ * (それでも DB 全件を対象にした RPC ほど厳密ではない点はフォールバック止まりとする)。
+ */
+async function getTopRatedAlbumsBySimpleAverage(
+  supabase: SupabaseServerClient,
+  limit: number,
+  sort: RankingSort,
+): Promise<Album[]> {
+  const candidatePoolSize = Math.max(limit * 5, 100);
+
+  let query = supabase
+    .from("albums")
+    .select(ALBUM_LIST_COLUMNS)
+    .gt("rating_count", 0);
+
+  if (sort === "reviews") {
+    // レビュー数順は単純平均でも歪みが小さいため、そのまま返す。
+    query = query
+      .order("rating_count", { ascending: false })
+      .order("avg_rating", { ascending: false });
+
+    const { data, error } = await query.limit(limit);
+    if (error || !data) return [];
+    return mapAlbumRows(data as DbAlbum[]);
+  }
+
+  query = query
+    .order("avg_rating", { ascending: false })
+    .order("rating_count", { ascending: false });
+
+  const { data, error } = await query.limit(candidatePoolSize);
+  if (error || !data) return [];
+
+  const globalMean = await getGlobalAverageRating(supabase);
+  const albums = mapAlbumRows(data as DbAlbum[]);
+
+  return [...albums]
+    .sort(
+      (a, b) =>
+        bayesianScore({
+          ratingCount: b.ratingCount,
+          avgRating: b.avgRating,
+          globalMean,
+        }) -
+        bayesianScore({
+          ratingCount: a.ratingCount,
+          avgRating: a.avgRating,
+          globalMean,
+        }),
+    )
+    .slice(0, limit);
+}
+
+/**
+ * 全体の平均評価(C)を1クエリで取得する。
+ * ranked_albums_bayesian RPC が未適用の場合のJSフォールバックでのみ使う。
+ */
+async function getGlobalAverageRating(
+  supabase: SupabaseServerClient,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from("albums")
+    .select("avg_rating")
+    .gt("rating_count", 0);
+
+  if (error || !data || data.length === 0) return 0;
+
+  const sum = data.reduce(
+    (total, row) => total + Number((row as { avg_rating: number }).avg_rating),
+    0,
+  );
+  return sum / data.length;
+}
+
+function mapRankedBayesianRow(row: DbRankedAlbumBayesianRow): Album {
+  return mapAlbum(row as DbAlbum);
+}
+
 export async function getTopRatedAlbums(
   limit: number,
   sort: RankingSort = "rating",
@@ -95,28 +191,107 @@ export async function getTopRatedAlbums(
 
   try {
     const supabase = await createClient();
-    let query = supabase
-      .from("albums")
-      .select(ALBUM_LIST_COLUMNS)
-      .gt("rating_count", 0);
 
-    if (sort === "reviews") {
-      query = query
-        .order("rating_count", { ascending: false })
-        .order("avg_rating", { ascending: false });
-    } else {
-      query = query
-        .order("avg_rating", { ascending: false })
-        .order("rating_count", { ascending: false });
+    // ベイズ加重平均でランキングを並べる RPC を優先する。
+    // 評価1件の満点が、評価多数の高評価より上位に来てしまう単純平均の
+    // 問題を SQL 側で補正する（レビュー全件フェッチも回避できる）。
+    const { data, error } = await supabase.rpc("ranked_albums_bayesian", {
+      prior_weight: BAYESIAN_PRIOR_WEIGHT,
+      result_limit: limit,
+      sort_mode: sort,
+    });
+
+    if (!error && data) {
+      return (data as DbRankedAlbumBayesianRow[]).map(mapRankedBayesianRow);
     }
 
-    const { data, error } = await query.limit(limit);
+    console.warn(
+      "[Supabase] ranked_albums_bayesian RPC unavailable, falling back to simple average:",
+      error?.message,
+    );
 
-    if (error || !data) return [];
-    return mapAlbumRows(data as DbAlbum[]);
-  } catch {
+    return await getTopRatedAlbumsBySimpleAverage(supabase, limit, sort);
+  } catch (err) {
+    console.error("[Supabase] getTopRatedAlbums:", err);
     return [];
   }
+}
+
+/**
+ * 期間内レビューを全件フェッチして JS 側で集計するフォールバック経路。
+ * ranked_albums_by_period RPC が未適用(migration前)の場合のみ使う。
+ * レビュー数が多い期間では重くなるため、恒常的な経路にはしないこと。
+ */
+async function getTopRatedAlbumsByReviewPeriodViaScan(
+  supabase: SupabaseServerClient,
+  period: Exclude<RankingPeriod, "all">,
+  fetchLimit: number,
+  sort: RankingSort,
+): Promise<Album[]> {
+  const since = rankingPeriodSince(period).toISOString();
+
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("album_id, rating")
+    .not("user_id", "is", null)
+    .gte("created_at", since);
+
+  if (error || !data) {
+    console.error(
+      "[Supabase] getTopRatedAlbumsByReviewPeriodViaScan:",
+      error?.message,
+    );
+    return [];
+  }
+
+  const stats = new Map<string, { sum: number; count: number }>();
+  for (const row of data) {
+    const albumId = row.album_id as string;
+    const rating = Number(row.rating);
+    const current = stats.get(albumId) ?? { sum: 0, count: 0 };
+    current.sum += rating;
+    current.count += 1;
+    stats.set(albumId, current);
+  }
+
+  const ranked = [...stats.entries()]
+    .map(([id, stat]) => ({
+      id,
+      avg: stat.sum / stat.count,
+      count: stat.count,
+    }))
+    .sort((a, b) =>
+      sort === "reviews"
+        ? b.count - a.count || b.avg - a.avg
+        : b.avg - a.avg || b.count - a.count,
+    )
+    .slice(0, fetchLimit);
+
+  if (ranked.length === 0) return [];
+
+  const albumIds = ranked.map((item) => item.id);
+  const { data: albumRows, error: albumError } = await supabase
+    .from("albums")
+    .select(ALBUM_LIST_COLUMNS)
+    .in("id", albumIds);
+
+  if (albumError || !albumRows) return [];
+
+  const albumsById = new Map(
+    mapAlbumRows(albumRows as DbAlbum[]).map((album) => [album.id, album]),
+  );
+
+  return ranked
+    .map(({ id, avg, count }) => {
+      const album = albumsById.get(id);
+      if (!album) return undefined;
+      return {
+        ...album,
+        avgRating: avg,
+        ratingCount: count,
+      };
+    })
+    .filter((album): album is Album => Boolean(album));
 }
 
 async function getTopRatedAlbumsByReviewPeriod(
@@ -130,65 +305,62 @@ async function getTopRatedAlbumsByReviewPeriod(
     const supabase = await createClient();
     const since = rankingPeriodSince(period).toISOString();
 
-    const { data, error } = await supabase
-      .from("reviews")
-      .select("album_id, rating")
-      .not("user_id", "is", null)
-      .gte("created_at", since);
+    // 期間内レビューを SQL 側で album_id 単位に集計し、期間内 global mean で
+    // ベイズ補正した RPC を優先する。全件フェッチによる JS 集計を避けられる。
+    const { data, error } = await supabase.rpc("ranked_albums_by_period", {
+      period_start: since,
+      prior_weight: BAYESIAN_PRIOR_WEIGHT,
+      result_limit: fetchLimit,
+      sort_mode: sort,
+    });
 
-    if (error || !data) {
-      console.error("[Supabase] getTopRatedAlbumsByReviewPeriod:", error?.message);
-      return [];
+    if (!error && data) {
+      const ranked = data as DbRankedAlbumByPeriodRow[];
+      if (ranked.length === 0) return [];
+
+      const albumIds = ranked.map((row) => row.album_id);
+      const { data: albumRows, error: albumError } = await supabase
+        .from("albums")
+        .select(ALBUM_LIST_COLUMNS)
+        .in("id", albumIds);
+
+      if (albumError || !albumRows) {
+        console.error(
+          "[Supabase] getTopRatedAlbumsByReviewPeriod album lookup:",
+          albumError?.message,
+        );
+        return [];
+      }
+
+      const albumsById = new Map(
+        mapAlbumRows(albumRows as DbAlbum[]).map((album) => [album.id, album]),
+      );
+
+      // RPC の score 順を維持したまま表示情報を付与する。
+      return ranked
+        .map((row) => {
+          const album = albumsById.get(row.album_id);
+          if (!album) return undefined;
+          return {
+            ...album,
+            avgRating: Number(row.period_avg),
+            ratingCount: row.period_count,
+          };
+        })
+        .filter((album): album is Album => Boolean(album));
     }
 
-    const stats = new Map<string, { sum: number; count: number }>();
-    for (const row of data) {
-      const albumId = row.album_id as string;
-      const rating = Number(row.rating);
-      const current = stats.get(albumId) ?? { sum: 0, count: 0 };
-      current.sum += rating;
-      current.count += 1;
-      stats.set(albumId, current);
-    }
-
-    const ranked = [...stats.entries()]
-      .map(([id, stat]) => ({
-        id,
-        avg: stat.sum / stat.count,
-        count: stat.count,
-      }))
-      .sort((a, b) =>
-        sort === "reviews"
-          ? b.count - a.count || b.avg - a.avg
-          : b.avg - a.avg || b.count - a.count,
-      )
-      .slice(0, fetchLimit);
-
-    if (ranked.length === 0) return [];
-
-    const albumIds = ranked.map((item) => item.id);
-    const { data: albumRows, error: albumError } = await supabase
-      .from("albums")
-      .select(ALBUM_LIST_COLUMNS)
-      .in("id", albumIds);
-
-    if (albumError || !albumRows) return [];
-
-    const albumsById = new Map(
-      mapAlbumRows(albumRows as DbAlbum[]).map((album) => [album.id, album]),
+    console.warn(
+      "[Supabase] ranked_albums_by_period RPC unavailable, falling back to scan:",
+      error?.message,
     );
 
-    return ranked
-      .map(({ id, avg, count }) => {
-        const album = albumsById.get(id);
-        if (!album) return undefined;
-        return {
-          ...album,
-          avgRating: avg,
-          ratingCount: count,
-        };
-      })
-      .filter((album): album is Album => Boolean(album));
+    return await getTopRatedAlbumsByReviewPeriodViaScan(
+      supabase,
+      period,
+      fetchLimit,
+      sort,
+    );
   } catch (err) {
     console.error("[Supabase] getTopRatedAlbumsByReviewPeriod:", err);
     return [];

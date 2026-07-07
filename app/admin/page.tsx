@@ -3,6 +3,10 @@ import { AdminContributionRowItem } from "@/components/admin/AdminContributionRo
 import { AdminReportRowItem } from "@/components/admin/AdminReportRow";
 import { AdminThreadRowItem } from "@/components/admin/AdminThreadRow";
 import { AdminUserRowItem } from "@/components/admin/AdminUserRow";
+import { BannedWordForm } from "@/components/admin/BannedWordForm";
+import { BannedWordRowItem } from "@/components/admin/BannedWordRow";
+import { BanForm } from "@/components/admin/BanForm";
+import { BanRowItem } from "@/components/admin/BanRow";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { getUser } from "@/lib/auth/session";
 import {
@@ -12,6 +16,8 @@ import {
 } from "@/lib/data/admin";
 import { getAdminReports } from "@/lib/data/reports";
 import { getPendingContributions } from "@/lib/data/contributions";
+import { getBannedWords } from "@/lib/data/moderation";
+import { listBans } from "@/lib/data/bans";
 import { pageTitle } from "@/lib/site";
 
 export const metadata = {
@@ -28,13 +34,16 @@ export default async function AdminPage() {
   const admin = await isCurrentUserAdmin();
   if (!admin) redirect("/");
 
-  const [stats, threads, users, reports, contributions] = await Promise.all([
-    getAdminStats(),
-    getAdminThreads(50),
-    getAdminUsers(100),
-    getAdminReports(50),
-    getPendingContributions(50),
-  ]);
+  const [stats, threads, users, reports, contributions, bannedWords, bans] =
+    await Promise.all([
+      getAdminStats(),
+      getAdminThreads(50),
+      getAdminUsers(100),
+      getAdminReports(50),
+      getPendingContributions(50),
+      getBannedWords(),
+      listBans(),
+    ]);
 
   const statCards: { label: string; value: number }[] = [
     { label: "未処理の通報", value: stats.pendingReports },
@@ -104,6 +113,85 @@ export default async function AdminPage() {
                 reports.map((report) => (
                   <AdminReportRowItem key={report.id} report={report} />
                 ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="mb-10">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold text-zinc-100">NG ワード管理</h2>
+          <p className="text-xs text-zinc-500">{bannedWords.length} 件</p>
+        </div>
+        <p className="mb-3 text-xs text-zinc-500">
+          追加した語を含む投稿は弾かれます（部分一致・大文字小文字は無視）。正規表現も指定できます。
+          DB・アプリ両方で強制されます。
+        </p>
+        <BannedWordForm />
+        <div className="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-900/30">
+          <table className="min-w-full text-left">
+            <thead className="text-xs text-zinc-500">
+              <tr className="border-b border-zinc-800">
+                <th className="px-3 py-2 font-medium">ワード</th>
+                <th className="px-3 py-2 font-medium">メモ</th>
+                <th className="px-3 py-2 font-medium">追加日時</th>
+                <th className="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bannedWords.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-3 py-6 text-center text-sm text-zinc-500"
+                  >
+                    NG ワードは登録されていません。
+                  </td>
+                </tr>
+              ) : (
+                bannedWords.map((word) => (
+                  <BannedWordRowItem key={word.id} word={word} />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="mb-10">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold text-zinc-100">BAN 管理</h2>
+          <p className="text-xs text-zinc-500">{bans.length} 件</p>
+        </div>
+        <p className="mb-3 text-xs text-zinc-500">
+          匿名（voter_key）とログインユーザー（user_id）を投稿禁止にできます。
+          対象キーを貼り付けて BAN してください。BAN された対象は投稿・コメント・投票が拒否されます。
+        </p>
+        <BanForm />
+        <div className="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-900/30">
+          <table className="min-w-full text-left">
+            <thead className="text-xs text-zinc-500">
+              <tr className="border-b border-zinc-800">
+                <th className="px-3 py-2 font-medium">対象</th>
+                <th className="px-3 py-2 font-medium">理由</th>
+                <th className="px-3 py-2 font-medium">BAN 日時</th>
+                <th className="px-3 py-2 font-medium">有効期限</th>
+                <th className="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bans.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-3 py-6 text-center text-sm text-zinc-500"
+                  >
+                    BAN は登録されていません。
+                  </td>
+                </tr>
+              ) : (
+                bans.map((ban) => <BanRowItem key={ban.id} ban={ban} />)
               )}
             </tbody>
           </table>

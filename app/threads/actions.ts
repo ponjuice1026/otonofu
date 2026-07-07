@@ -49,6 +49,13 @@ function mapInsertRpcError(message: string): string {
   if (normalized.includes("rate limit exceeded")) {
     return RATE_LIMIT_MESSAGE;
   }
+  // NG ワード（banned word）は BAN（'banned'）より先に判定する。
+  if (normalized.includes("banned word")) {
+    return "投稿できない内容が含まれています。";
+  }
+  if (normalized.includes("banned")) {
+    return "投稿が制限されています。";
+  }
   if (normalized.includes("too many urls")) {
     return "URL が多すぎます。数を減らして再度お試しください。";
   }

@@ -5,6 +5,8 @@ import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { getUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { addBannedWord, deleteBannedWord } from "@/lib/data/moderation";
+import { banUser, unban, type BanSubjectType } from "@/lib/data/bans";
 
 export type AdminActionResult = {
   error?: string;
@@ -108,4 +110,113 @@ export async function adminDeleteThread(
   revalidatePath("/admin");
   revalidatePath("/threads");
   return { success: "セッションを削除しました。" };
+}
+
+// ---------------------------------------------------------------------------
+// NG ワード管理
+// ---------------------------------------------------------------------------
+
+export async function addBannedWordAction(
+  pattern: string,
+  isRegex: boolean,
+  note: string | null,
+): Promise<AdminActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const trimmed = pattern.trim();
+  if (!trimmed) return { error: "ワードを入力してください。" };
+  if (trimmed.length > 200) {
+    return { error: "ワードは200字以内で入力してください。" };
+  }
+
+  // 正規表現なら妥当性を検証（不正なら全投稿を止めかねないため事前に弾く）。
+  if (isRegex) {
+    try {
+      new RegExp(trimmed, "iu");
+    } catch {
+      return { error: "正規表現が不正です。構文を確認してください。" };
+    }
+  }
+
+  const result = await addBannedWord({
+    pattern: trimmed,
+    isRegex,
+    note,
+    createdBy: auth.selfId ?? null,
+  });
+  if (result.error) return { error: result.error };
+
+  revalidatePath("/admin");
+  return { success: "NG ワードを追加しました。" };
+}
+
+export async function deleteBannedWordAction(
+  id: string,
+): Promise<AdminActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: auth.error };
+  if (!id) return { error: "ID が不正です。" };
+
+  const result = await deleteBannedWord(id);
+  if (result.error) return { error: result.error };
+
+  revalidatePath("/admin");
+  return { success: "NG ワードを削除しました。" };
+}
+
+// ---------------------------------------------------------------------------
+// BAN 管理
+// ---------------------------------------------------------------------------
+
+export async function banUserAction(input: {
+  subjectType: BanSubjectType;
+  subjectKey: string;
+  reason: string | null;
+  expiresAt: string | null;
+}): Promise<AdminActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  if (input.subjectType !== "user" && input.subjectType !== "voter") {
+    return { error: "対象種別が不正です。" };
+  }
+
+  const key = input.subjectKey.trim();
+  if (!key) return { error: "対象キー（user_id または voter_key）を入力してください。" };
+  if (key.length > 200) return { error: "対象キーが長すぎます。" };
+
+  // 有効期限が指定されていれば ISO 文字列に正規化。
+  let expiresAt: string | null = null;
+  if (input.expiresAt) {
+    const parsed = new Date(input.expiresAt);
+    if (Number.isNaN(parsed.getTime())) {
+      return { error: "有効期限の日時が不正です。" };
+    }
+    expiresAt = parsed.toISOString();
+  }
+
+  const result = await banUser({
+    subjectType: input.subjectType,
+    subjectKey: key,
+    reason: input.reason,
+    expiresAt,
+    createdBy: auth.selfId ?? null,
+  });
+  if (result.error) return { error: result.error };
+
+  revalidatePath("/admin");
+  return { success: "BAN を追加しました。" };
+}
+
+export async function unbanAction(id: string): Promise<AdminActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: auth.error };
+  if (!id) return { error: "ID が不正です。" };
+
+  const result = await unban(id);
+  if (result.error) return { error: result.error };
+
+  revalidatePath("/admin");
+  return { success: "BAN を解除しました。" };
 }
