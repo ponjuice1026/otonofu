@@ -8,7 +8,7 @@ import {
 } from "@/lib/data/genres";
 import { getGenreBySlug } from "@/lib/genres";
 import { getArtistNameMapForIds } from "@/lib/data/artists";
-import { pageTitle } from "@/lib/site";
+import { pageTitle, siteUrl } from "@/lib/site";
 
 // ジャンル別アルバム一覧は auth 非依存の公開データ（getAlbumsForGenre は
 // ユーザー個別表示・cookie を参照しない）。5 分の ISR に置く。
@@ -30,6 +30,12 @@ export async function generateMetadata({
   return {
     title: pageTitle(genre.name),
     description: `${genre.name}(${genre.nameEn})のアルバム一覧`,
+    alternates: { canonical: siteUrl(`/genres/${slug}`) },
+    openGraph: {
+      title: pageTitle(genre.name),
+      description: `${genre.name}(${genre.nameEn})のアルバム一覧`,
+      url: siteUrl(`/genres/${slug}`),
+    },
   };
 }
 

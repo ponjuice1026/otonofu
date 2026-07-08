@@ -18,7 +18,7 @@ import {
   getDiscussionThreadsByAuthorId,
 } from "@/lib/data/threads";
 import { formatThreadDate } from "@/lib/threads/format";
-import { pageTitle } from "@/lib/site";
+import { pageTitle, siteUrl } from "@/lib/site";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -69,9 +69,11 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title,
     description,
+    alternates: { canonical: siteUrl(`/users/${id}`) },
     openGraph: {
       title,
       description,
+      url: siteUrl(`/users/${id}`),
       images: profile.avatar_url ? [{ url: profile.avatar_url }] : undefined,
     },
   };
