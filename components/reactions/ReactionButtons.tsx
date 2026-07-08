@@ -61,10 +61,10 @@ export function ReactionButtons({ target, state }: ReactionButtonsProps) {
         type="button"
         disabled={isPending}
         onClick={() => dispatch("good")}
-        className={`flex items-center gap-1 rounded-md border px-2 py-1 transition ${
+        className={`flex items-center gap-1 rounded-md px-1.5 py-1 transition ${
           isGood
-            ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
-            : "border-[var(--border-strong)] bg-[var(--surface)] text-neutral-400 hover:border-emerald-500/35 hover:text-emerald-300"
+            ? "text-emerald-300"
+            : "text-neutral-400 hover:text-emerald-300"
         } ${isPending ? "opacity-60" : ""}`}
         aria-pressed={isGood}
         aria-label="good"
@@ -76,10 +76,10 @@ export function ReactionButtons({ target, state }: ReactionButtonsProps) {
         type="button"
         disabled={isPending}
         onClick={() => dispatch("bad")}
-        className={`flex items-center gap-1 rounded-md border px-2 py-1 transition ${
+        className={`flex items-center gap-1 rounded-md px-1.5 py-1 transition ${
           isBad
-            ? "border-rose-500/50 bg-rose-500/10 text-rose-300"
-            : "border-[var(--border-strong)] bg-[var(--surface)] text-neutral-400 hover:border-rose-500/35 hover:text-rose-300"
+            ? "text-rose-300"
+            : "text-neutral-400 hover:text-rose-300"
         } ${isPending ? "opacity-60" : ""}`}
         aria-pressed={isBad}
         aria-label="bad"

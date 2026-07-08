@@ -41,13 +41,13 @@ export function ProfileExpandableSection({
             {count} 件
           </span>
         </h2>
-        {count > 0 && !expanded && (
+        {count > 0 && (
           <button
             type="button"
-            onClick={() => setExpanded(true)}
+            onClick={() => setExpanded((current) => !current)}
             className="text-sm text-neutral-400 transition hover:text-amber-300"
           >
-            すべて表示
+            {expanded ? "閉じる" : "すべて表示"}
           </button>
         )}
       </div>

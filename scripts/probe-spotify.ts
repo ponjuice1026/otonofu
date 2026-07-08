@@ -73,7 +73,16 @@ async function main() {
       const body = await res.text();
       console.log(`      body: ${body.slice(0, 200)}`);
     } else if (path.startsWith("/search")) {
-      const body: any = await res.json();
+      const body = (await res.json()) as {
+        artists?: {
+          items?: Array<{
+            name?: string;
+            followers?: { total?: number };
+            popularity?: number;
+          }>;
+          total?: number;
+        };
+      };
       const items = body.artists?.items ?? [];
       console.log(`      found ${items.length} artists, total=${body.artists?.total}`);
       for (const a of items.slice(0, 3)) {

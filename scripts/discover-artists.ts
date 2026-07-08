@@ -229,7 +229,7 @@ async function main() {
 
   console.log(`   現状: DB ${dbCount} 組 + キュー ${queueCount} 組 = ${currentTotal} 組`);
 
-  let needed = target - currentTotal;
+  const needed = target - currentTotal;
   if (needed <= 0) {
     console.log(`✅ 既に目標達成`);
     return;

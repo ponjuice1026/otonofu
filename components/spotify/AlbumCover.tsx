@@ -4,7 +4,7 @@ type AlbumCoverProps = {
   imageUrl?: string | null;
   fallbackColor: string;
   title: string;
-  size?: "xs" | "sm" | "lg" | "card";
+  size?: "xs" | "sm" | "lg" | "card" | "hero";
 };
 
 export function AlbumCover({
@@ -14,18 +14,22 @@ export function AlbumCover({
   size = "lg",
 }: AlbumCoverProps) {
   const sizeClass =
-    size === "lg"
-      ? "max-w-xs"
-      : size === "card"
-        ? "w-full"
-        : size === "xs"
-          ? "h-10 w-10"
-          : "h-14 w-14";
+    size === "hero"
+      ? "w-full max-w-[260px] sm:max-w-[300px]"
+      : size === "lg"
+        ? "max-w-xs"
+        : size === "card"
+          ? "w-full"
+          : size === "xs"
+            ? "h-10 w-10"
+            : "h-14 w-14";
+
+  const roundedClass = size === "hero" ? "rounded-xl" : "rounded-md";
 
   if (imageUrl) {
     return (
       <div
-        className={`relative aspect-square shrink-0 overflow-hidden rounded-md bg-zinc-800 ${sizeClass}`}
+        className={`relative aspect-square shrink-0 overflow-hidden bg-zinc-800 shadow-lg ${roundedClass} ${sizeClass}`}
       >
         <Image
           src={imageUrl}
@@ -33,15 +37,18 @@ export function AlbumCover({
           fill
           className="object-cover"
           sizes={
-            size === "lg"
-              ? "320px"
-              : size === "card"
-                ? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 256px"
-                : size === "xs"
-                  ? "40px"
-                  : "56px"
+            size === "hero"
+              ? "(max-width: 640px) 260px, 300px"
+              : size === "lg"
+                ? "320px"
+                : size === "card"
+                  ? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 256px"
+                  : size === "xs"
+                    ? "40px"
+                    : "56px"
           }
           quality={90}
+          priority={size === "hero"}
         />
       </div>
     );

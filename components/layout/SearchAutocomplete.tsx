@@ -56,6 +56,16 @@ function buildFlatItems(results: SiteSearchResult | null): FlatItem[] {
   if (!results) return [];
 
   return [
+    ...results.artists.map((item) => ({
+      kind: "artist" as const,
+      href: `/artists/${item.id}`,
+      item,
+    })),
+    ...results.albums.map((item) => ({
+      kind: "album" as const,
+      href: `/albums/${item.id}`,
+      item,
+    })),
     ...results.threads.map((item) => ({
       kind: "thread" as const,
       href: `/threads/${item.id}`,
@@ -69,16 +79,6 @@ function buildFlatItems(results: SiteSearchResult | null): FlatItem[] {
     ...results.reviews.map((item) => ({
       kind: "review" as const,
       href: `/albums/${item.albumId}#review-${item.id}`,
-      item,
-    })),
-    ...results.artists.map((item) => ({
-      kind: "artist" as const,
-      href: `/artists/${item.id}`,
-      item,
-    })),
-    ...results.albums.map((item) => ({
-      kind: "album" as const,
-      href: `/albums/${item.id}`,
       item,
     })),
   ];
@@ -282,108 +282,6 @@ export function SearchAutocomplete() {
             </p>
           )}
 
-          {!loading && (results?.threads.length ?? 0) > 0 && (
-            <section>
-              <p className="sticky top-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
-                セッション
-              </p>
-              <ul>
-                {results?.threads.map((thread) => {
-                  itemIndex += 1;
-                  const currentIndex = itemIndex;
-                  return (
-                    <li key={thread.id}>
-                      <Link
-                        id={`${listboxId}-option-${currentIndex}`}
-                        href={`/threads/${thread.id}`}
-                        role="option"
-                        aria-selected={activeIndex === currentIndex}
-                        onMouseEnter={() => setActiveIndex(currentIndex)}
-                        onClick={() => setOpen(false)}
-                        className={`block px-4 py-2.5 transition ${rowClass(currentIndex)}`}
-                      >
-                        <p className="truncate text-sm font-medium text-neutral-100">
-                          {thread.title}
-                        </p>
-                        <p className="truncate text-xs text-neutral-500">
-                          {thread.snippet}
-                        </p>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-
-          {!loading && (results?.posts.length ?? 0) > 0 && (
-            <section>
-              <p className="sticky top-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
-                コメント
-              </p>
-              <ul>
-                {results?.posts.map((post) => {
-                  itemIndex += 1;
-                  const currentIndex = itemIndex;
-                  return (
-                    <li key={post.id}>
-                      <Link
-                        id={`${listboxId}-option-${currentIndex}`}
-                        href={`/threads/${post.threadId}#post-${post.id}`}
-                        role="option"
-                        aria-selected={activeIndex === currentIndex}
-                        onMouseEnter={() => setActiveIndex(currentIndex)}
-                        onClick={() => setOpen(false)}
-                        className={`block px-4 py-2.5 transition ${rowClass(currentIndex)}`}
-                      >
-                        <p className="truncate text-xs text-neutral-500">
-                          {post.threadTitle}
-                        </p>
-                        <p className="truncate text-sm text-neutral-200">
-                          {post.snippet}
-                        </p>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-
-          {!loading && (results?.reviews.length ?? 0) > 0 && (
-            <section>
-              <p className="sticky top-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
-                レビュー
-              </p>
-              <ul>
-                {results?.reviews.map((review) => {
-                  itemIndex += 1;
-                  const currentIndex = itemIndex;
-                  return (
-                    <li key={review.id}>
-                      <Link
-                        id={`${listboxId}-option-${currentIndex}`}
-                        href={`/albums/${review.albumId}#review-${review.id}`}
-                        role="option"
-                        aria-selected={activeIndex === currentIndex}
-                        onMouseEnter={() => setActiveIndex(currentIndex)}
-                        onClick={() => setOpen(false)}
-                        className={`block px-4 py-2.5 transition ${rowClass(currentIndex)}`}
-                      >
-                        <p className="truncate text-sm font-medium text-neutral-100">
-                          {review.albumTitle}
-                        </p>
-                        <p className="truncate text-xs text-neutral-500">
-                          {review.snippet}
-                        </p>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-
           {!loading && (results?.artists.length ?? 0) > 0 && (
             <section>
               <p className="sticky top-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
@@ -479,6 +377,108 @@ export function SearchAutocomplete() {
                             {album.year}
                           </p>
                         </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {!loading && (results?.threads.length ?? 0) > 0 && (
+            <section>
+              <p className="sticky top-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+                セッション
+              </p>
+              <ul>
+                {results?.threads.map((thread) => {
+                  itemIndex += 1;
+                  const currentIndex = itemIndex;
+                  return (
+                    <li key={thread.id}>
+                      <Link
+                        id={`${listboxId}-option-${currentIndex}`}
+                        href={`/threads/${thread.id}`}
+                        role="option"
+                        aria-selected={activeIndex === currentIndex}
+                        onMouseEnter={() => setActiveIndex(currentIndex)}
+                        onClick={() => setOpen(false)}
+                        className={`block px-4 py-2.5 transition ${rowClass(currentIndex)}`}
+                      >
+                        <p className="truncate text-sm font-medium text-neutral-100">
+                          {thread.title}
+                        </p>
+                        <p className="truncate text-xs text-neutral-500">
+                          {thread.snippet}
+                        </p>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {!loading && (results?.posts.length ?? 0) > 0 && (
+            <section>
+              <p className="sticky top-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+                コメント
+              </p>
+              <ul>
+                {results?.posts.map((post) => {
+                  itemIndex += 1;
+                  const currentIndex = itemIndex;
+                  return (
+                    <li key={post.id}>
+                      <Link
+                        id={`${listboxId}-option-${currentIndex}`}
+                        href={`/threads/${post.threadId}#post-${post.id}`}
+                        role="option"
+                        aria-selected={activeIndex === currentIndex}
+                        onMouseEnter={() => setActiveIndex(currentIndex)}
+                        onClick={() => setOpen(false)}
+                        className={`block px-4 py-2.5 transition ${rowClass(currentIndex)}`}
+                      >
+                        <p className="truncate text-xs text-neutral-500">
+                          {post.threadTitle}
+                        </p>
+                        <p className="truncate text-sm text-neutral-200">
+                          {post.snippet}
+                        </p>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {!loading && (results?.reviews.length ?? 0) > 0 && (
+            <section>
+              <p className="sticky top-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+                レビュー
+              </p>
+              <ul>
+                {results?.reviews.map((review) => {
+                  itemIndex += 1;
+                  const currentIndex = itemIndex;
+                  return (
+                    <li key={review.id}>
+                      <Link
+                        id={`${listboxId}-option-${currentIndex}`}
+                        href={`/albums/${review.albumId}#review-${review.id}`}
+                        role="option"
+                        aria-selected={activeIndex === currentIndex}
+                        onMouseEnter={() => setActiveIndex(currentIndex)}
+                        onClick={() => setOpen(false)}
+                        className={`block px-4 py-2.5 transition ${rowClass(currentIndex)}`}
+                      >
+                        <p className="truncate text-sm font-medium text-neutral-100">
+                          {review.albumTitle}
+                        </p>
+                        <p className="truncate text-xs text-neutral-500">
+                          {review.snippet}
+                        </p>
                       </Link>
                     </li>
                   );

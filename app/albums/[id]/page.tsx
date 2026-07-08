@@ -38,23 +38,35 @@ function resolveBackLink(
   artistId: string,
   artistName: string,
 ): { href: string; label: string } {
+  let refererPath: string | null = null;
+  if (referer) {
+    try {
+      refererPath = new URL(referer).pathname;
+    } catch {
+      refererPath = null;
+    }
+  }
+
   const cameFromArtist =
     fromQuery === "artist" ||
-    (() => {
-      if (!referer) return false;
-      try {
-        const url = new URL(referer);
-        const match = url.pathname.match(/^\/artists\/([^/]+)\/?$/);
+    (refererPath !== null &&
+      (() => {
+        const match = refererPath!.match(/^\/artists\/([^/]+)\/?$/);
         return Boolean(match && match[1] === artistId);
-      } catch {
-        return false;
-      }
-    })();
+      })());
 
   if (cameFromArtist) {
     const label = artistName ? `← ${artistName}` : "← アーティスト";
     return { href: `/artists/${artistId}`, label };
   }
+
+  const cameFromHome =
+    fromQuery === "home" || (refererPath !== null && refererPath === "/");
+
+  if (cameFromHome) {
+    return { href: "/", label: "← ホーム" };
+  }
+
   return { href: "/albums", label: "← アルバム一覧" };
 }
 
@@ -229,11 +241,14 @@ export default async function AlbumDetailPage({
       </Link>
 
       <div className="mb-10 flex flex-col gap-8 sm:flex-row">
-        <AlbumCover
-          imageUrl={albumCoverSrc(album)}
-          fallbackColor={album.coverColor}
-          title={album.title}
-        />
+        <div className="mx-auto w-full max-w-[260px] sm:mx-0 sm:w-auto sm:max-w-none">
+          <AlbumCover
+            imageUrl={albumCoverSrc(album)}
+            fallbackColor={album.coverColor}
+            title={album.title}
+            size="hero"
+          />
+        </div>
         <div className="flex-1">
           <p className="text-sm text-[var(--muted)]">
             {album.year} · {getReleaseTypeLabel(album.type)} ·{" "}

@@ -33,9 +33,9 @@ export function AlbumRankingFilters({
       : chartsPageHref({ ...params, hash: "ranking" });
 
   return (
-    <div className="flex flex-col gap-3">
-      <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-neutral-500">
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
           並び替え
         </p>
         <div className="tab-group flex-wrap">
@@ -60,8 +60,8 @@ export function AlbumRankingFilters({
         </div>
       </div>
 
-      <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-neutral-500">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
           期間
         </p>
         <div className="tab-group flex-wrap">
@@ -86,8 +86,8 @@ export function AlbumRankingFilters({
         </div>
       </div>
 
-      <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-neutral-500">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
           ジャンル
         </p>
         <div className="tab-group flex-wrap">

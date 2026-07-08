@@ -46,8 +46,12 @@ export function ReportButton({
 
   if (state.success && !open) {
     return (
-      <span className={`text-xs text-zinc-500 ${className}`.trim()}>
-        {reportedLabel}
+      <span
+        className={`text-xs text-zinc-500 ${className}`.trim()}
+        title={reportedLabel}
+        aria-label={reportedLabel}
+      >
+        <span aria-hidden="true">🚩</span>
       </span>
     );
   }
@@ -57,9 +61,11 @@ export function ReportButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`text-xs text-zinc-500 transition hover:text-red-300 ${className}`.trim()}
+        className={`text-sm leading-none text-zinc-600 transition hover:text-red-300 ${className}`.trim()}
+        title={triggerLabel}
+        aria-label={triggerLabel}
       >
-        {triggerLabel}
+        <span aria-hidden="true">🚩</span>
       </button>
     );
   }

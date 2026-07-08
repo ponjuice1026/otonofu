@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatThreadDate } from "@/lib/threads/format";
-import { rankNumClass } from "@/lib/rank-tone";
+import { formatRankLabel, rankNumClass } from "@/lib/rank-tone";
 import type { DiscussionThread } from "@/lib/types";
 
 type ThreadHomeCardProps = {
@@ -29,17 +29,22 @@ export function ThreadHomeCard({
     >
       <div className="thread-home-card__head">
         {rank !== undefined ? (
-          <span className={`${rankNumClass(rank)} thread-home-card__rank`}>
-            {rank}
+          <span
+            className={`${rankNumClass(rank)} thread-home-card__rank`}
+            aria-label={`人気順 ${rank} 位`}
+          >
+            {formatRankLabel(rank)}
           </span>
         ) : featured ? (
           <span className="thread-home-card__badge" aria-hidden="true">
             ★
           </span>
         ) : null}
-        <span className={thread.kind === "album" ? "badge badge-muted" : "badge"}>
-          {thread.kind === "album" ? "アルバム" : "議論"}
-        </span>
+        {thread.kind === "album" && (
+          <span className="badge badge-muted text-[0.6875rem] opacity-75">
+            アルバム
+          </span>
+        )}
         {thread.hasPoll && <span className="badge">投票</span>}
       </div>
 

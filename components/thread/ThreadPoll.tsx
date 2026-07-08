@@ -88,14 +88,14 @@ export function ThreadPoll({ poll, canAddOption = false }: ThreadPollProps) {
     <section className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900/50 px-5 py-5">
       <h2 className="mb-1 text-lg font-semibold text-zinc-100">投票</h2>
       <p className="mb-4 text-xs text-zinc-500">
-        ログイン不要 · 1人1票（このブラウザで管理）
+        ログイン不要 · 1人1票
         {hasVoted
           ? viewedOnly
             ? " · 結果閲覧済み"
             : total > 0
               ? ` · 集計対象 ${total} 票`
               : ""
-          : " · 投票後に得票率（%）が表示されます"}
+          : ""}
       </p>
 
       {hasVoted ? (

@@ -23,18 +23,13 @@ export function PollResults({ poll, preview = false }: PollResultsProps) {
 
   return (
     <div>
-      {!preview && (
-        <p className="mb-3 text-sm text-zinc-400">
-          {viewedOnly
-            ? "結果を閲覧しました。得票率は集計対象の選択肢のみ表示しています。"
-            : "投票ありがとうございます。各選択肢の得票率は以下の通りです。"}
+      {!preview && viewedOnly && (
+        <p className="mb-3 text-xs text-zinc-500">
+          得票率は集計対象の選択肢のみ表示しています。
         </p>
       )}
       {preview && (
-        <p className="mb-3 text-xs text-zinc-500">
-          投票後はこのようにパーセンテージと棒グラフで結果が表示されます（サンプル）。
-          結果閲覧用の選択肢は集計に含まれません。
-        </p>
+        <p className="mb-3 text-xs text-zinc-500">結果表示のサンプル</p>
       )}
 
       <ul className="flex flex-col gap-3">

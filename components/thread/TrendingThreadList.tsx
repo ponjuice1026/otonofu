@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ThreadHomeCard } from "@/components/thread/ThreadHomeCard";
 import { formatThreadDate } from "@/lib/threads/format";
+import { formatRankLabel, rankNumClass } from "@/lib/rank-tone";
 import type { DiscussionThread } from "@/lib/types";
 
 type TrendingThreadListProps = {
@@ -53,8 +54,11 @@ export function TrendingThreadList({
             href={`/threads/${thread.id}`}
             className="card-interactive flex items-start gap-3 px-4 py-3.5"
           >
-            <span className="rank-num mt-0.5 w-8 shrink-0 text-center">
-              {index + 1}
+            <span
+              className={`${rankNumClass(index + 1)} mt-0.5 w-8 shrink-0 text-center`}
+              aria-label={`人気順 ${index + 1} 位`}
+            >
+              {formatRankLabel(index + 1)}
             </span>
             <div className="min-w-0 flex-1">
               <h3 className="line-clamp-1 font-semibold text-neutral-100">
