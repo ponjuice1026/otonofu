@@ -94,6 +94,7 @@ async function main() {
     console.log(
       `📊 キュー状況: pending ${stats.pending} / done ${stats.done} / failed ${stats.failed} / 合計 ${stats.total}`,
     );
+    process.exit(0);
   } catch (err) {
     console.error(`❌ ${err instanceof Error ? err.message : err}`);
     process.exit(1);

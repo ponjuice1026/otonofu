@@ -71,6 +71,7 @@ async function main() {
       : await runSpotifySync({ full, batchSize: batchSize ?? 5 });
 
     printResult(result);
+    process.exit(0);
   } catch (err) {
     console.error(`❌ ${err instanceof Error ? err.message : err}`);
     process.exit(1);
