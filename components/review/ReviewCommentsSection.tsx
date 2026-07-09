@@ -213,11 +213,14 @@ export function ReviewCommentsSection({
               </div>
             ) : null}
 
+            <p className="text-xs text-zinc-500">
+              匿名で投稿します（ログイン不要）。表示名は空欄だと「名無し」になります。
+            </p>
             <input
               type="text"
               name="anonymousName"
               maxLength={24}
-              placeholder="表示名（任意・空欄で名無し）"
+              placeholder="匿名の表示名（任意・空欄で名無し）"
               className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none"
             />
             <textarea

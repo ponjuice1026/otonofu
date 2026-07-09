@@ -7,6 +7,9 @@ import {
   type ThreadActionState,
 } from "@/app/threads/actions";
 
+/** 表示名が空欄のときの匿名投稿名（DBの normalizeAnonymousName と同じ既定値の説明用）。 */
+const ANONYMOUS_FALLBACK_LABEL = "名無し";
+
 type ThreadPostFormProps = {
   threadId: string;
   variant?: "inline" | "compose";
@@ -33,6 +36,7 @@ export function ThreadPostForm({
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [postAnonymously, setPostAnonymously] = useState(false);
+  const [anonymousNameInput, setAnonymousNameInput] = useState("");
   const [state, formAction, pending] = useActionState(
     createDiscussionPost,
     initialState,
@@ -42,6 +46,7 @@ export function ThreadPostForm({
     if (state.success) {
       formRef.current?.reset();
       setPostAnonymously(false);
+      setAnonymousNameInput("");
       onPosted();
       router.refresh();
     }
@@ -51,6 +56,12 @@ export function ThreadPostForm({
   const isFixedReply = isInline && replyToPostId !== null;
   const showAnonymousFields = !isLoggedIn || postAnonymously;
   const resolvedDisplayName = defaultDisplayName?.trim() || "ユーザー";
+  // 今この瞬間、実際にどの名前で投稿されるか（監査 D-5）。
+  // ログイン + 匿名オフ: プロフィール名。それ以外: 入力中の表示名 or 名無し。
+  const willPostAsAnonymous = !isLoggedIn || postAnonymously;
+  const currentPostingName = willPostAsAnonymous
+    ? anonymousNameInput.trim() || ANONYMOUS_FALLBACK_LABEL
+    : resolvedDisplayName;
 
   return (
     <form
@@ -89,39 +100,49 @@ export function ThreadPostForm({
         </p>
       )}
 
+      {/* 今どの名前で投稿されるかを常に明示する（監査 D-5）。 */}
+      <p
+        className={`flex flex-wrap items-center gap-1.5 rounded-md border px-3 py-1.5 ${
+          willPostAsAnonymous
+            ? "border-zinc-700 bg-zinc-900/60"
+            : "border-amber-500/30 bg-amber-500/5"
+        } ${isInline ? "text-xs" : "text-sm"}`}
+      >
+        <span className="text-zinc-400">
+          {willPostAsAnonymous ? "匿名で投稿します:" : "投稿者名として投稿します:"}
+        </span>
+        <span
+          className={`font-semibold ${willPostAsAnonymous ? "text-zinc-200" : "text-amber-300"}`}
+        >
+          {currentPostingName}
+        </span>
+      </p>
+
       {isLoggedIn && (
-        <div className="flex flex-col gap-2">
-          {!postAnonymously && (
-            <p className={`text-zinc-400 ${isInline ? "text-xs" : "text-sm"}`}>
-              投稿者名:{" "}
-              <span className="font-medium text-zinc-200">
-                {resolvedDisplayName}
-              </span>
-            </p>
-          )}
-          <label
-            className={`flex items-center gap-2 text-zinc-300 ${isInline ? "text-xs" : "text-sm"}`}
-          >
-            <input
-              type="checkbox"
-              name="postAnonymously"
-              checked={postAnonymously}
-              onChange={(event) => setPostAnonymously(event.target.checked)}
-              className="accent-amber-500"
-            />
-            匿名で投稿する
-          </label>
-        </div>
+        <label
+          className={`flex items-center gap-2 text-zinc-300 ${isInline ? "text-xs" : "text-sm"}`}
+        >
+          <input
+            type="checkbox"
+            name="postAnonymously"
+            checked={postAnonymously}
+            onChange={(event) => setPostAnonymously(event.target.checked)}
+            className="accent-amber-500"
+          />
+          匿名（名無し）で投稿する
+        </label>
       )}
 
       {showAnonymousFields && (
         <label className={`flex flex-col gap-1 ${isInline ? "text-xs" : "text-sm"}`}>
-          <span className="text-zinc-400">表示名（任意）</span>
+          <span className="text-zinc-400">匿名の表示名（任意）</span>
           <input
             type="text"
             name="anonymousName"
             maxLength={24}
             placeholder="空欄で名無し"
+            value={anonymousNameInput}
+            onChange={(event) => setAnonymousNameInput(event.target.value)}
             className={`rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100 focus:border-amber-500/50 focus:outline-none ${
               isInline
                 ? "px-3 py-1.5 text-sm"

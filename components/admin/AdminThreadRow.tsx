@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { adminDeleteThread, setThreadFeatured } from "@/app/admin/actions";
+import { lockThread, unlockThread } from "@/app/threads/actions";
 import { formatThreadDate } from "@/lib/threads/format";
 import type { AdminThreadRow } from "@/lib/data/admin";
 
@@ -13,14 +14,17 @@ type Props = {
 export function AdminThreadRowItem({ thread }: Props) {
   const [pending, startTransition] = useTransition();
   const [featuredPending, startFeaturedTransition] = useTransition();
+  const [lockPending, startLockTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [featuredError, setFeaturedError] = useState<string | null>(null);
+  const [lockError, setLockError] = useState<string | null>(null);
   const [deleted, setDeleted] = useState(false);
   const [featuredRank, setFeaturedRank] = useState(thread.featuredRank);
   const [rankInput, setRankInput] = useState(
     String(thread.featuredRank ?? 0),
   );
   const [noteInput, setNoteInput] = useState(thread.featuredNote ?? "");
+  const [isLocked, setIsLocked] = useState(thread.isLocked);
 
   function handleDelete() {
     if (!confirm(`「${thread.title}」を削除しますか？`)) return;
@@ -73,6 +77,30 @@ export function AdminThreadRowItem({ thread }: Props) {
     });
   }
 
+  function handleToggleLock() {
+    setLockError(null);
+    if (isLocked) {
+      startLockTransition(async () => {
+        const result = await unlockThread(thread.id);
+        if (result.error) {
+          setLockError(result.error);
+          return;
+        }
+        setIsLocked(false);
+      });
+      return;
+    }
+    const reason = window.prompt("凍結理由（任意・空欄可）") ?? undefined;
+    startLockTransition(async () => {
+      const result = await lockThread(thread.id, reason);
+      if (result.error) {
+        setLockError(result.error);
+        return;
+      }
+      setIsLocked(true);
+    });
+  }
+
   if (deleted) {
     return (
       <tr className="border-b border-zinc-800/50">
@@ -96,6 +124,11 @@ export function AdminThreadRowItem({ thread }: Props) {
           <span className="badge">
             {thread.kind === "album" ? "アルバム" : "議論"}
           </span>
+          {isLocked && (
+            <span className="badge ml-2 border-amber-500/40 text-amber-300">
+              凍結中
+            </span>
+          )}
           <span className="ml-2">
             {thread.authorName} · {formatThreadDate(thread.createdAt)}
           </span>
@@ -118,7 +151,20 @@ export function AdminThreadRowItem({ thread }: Props) {
                 ? "一押しを解除"
                 : "一押しにする"}
           </button>
+          <button
+            type="button"
+            onClick={handleToggleLock}
+            disabled={lockPending}
+            className={
+              isLocked
+                ? "rounded-md border border-sky-500/40 px-2.5 py-1 text-xs text-sky-300 transition hover:border-sky-400 hover:text-sky-200 disabled:opacity-50"
+                : "rounded-md border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:opacity-50"
+            }
+          >
+            {lockPending ? "更新中…" : isLocked ? "凍結を解除" : "凍結する"}
+          </button>
         </div>
+        {lockError && <p className="mt-1 text-xs text-red-300">{lockError}</p>}
 
         {featuredRank !== null && (
           <div className="mt-2 flex flex-wrap items-center gap-2">

@@ -7,6 +7,7 @@ import { AddToListDropdown } from "@/components/list/AddToListDropdown";
 import { TrackRatingList } from "@/components/review/TrackRatingList";
 import { ArtistLink } from "@/components/artist/ArtistLink";
 import { ReviewCard } from "@/components/review/ReviewCard";
+import { ReviewSortTabs } from "@/components/review/ReviewSortTabs";
 import { StarRating } from "@/components/ui/StarRating";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { getUser } from "@/lib/auth/session";
@@ -18,6 +19,7 @@ import { getReviewReactionStates } from "@/lib/data/reactions";
 import { getReviewCommentsForReviews } from "@/lib/data/review-comments";
 import { getReviewsByAlbumId, getUserReviewForAlbum } from "@/lib/data/reviews";
 import { getOwnListsForAlbum } from "@/lib/data/lists";
+import { parseReviewSort } from "@/lib/reviews/review-sort";
 import {
   getTrackRatingAveragesForAlbum,
   getUserTrackRatingsForAlbum,
@@ -27,7 +29,7 @@ import { pageTitle, siteUrl } from "@/lib/site";
 
 type PageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string; reviewSort?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -121,13 +123,14 @@ export default async function AlbumDetailPage({
   searchParams,
 }: PageProps) {
   const { id } = await params;
-  const { from } = await searchParams;
+  const { from, reviewSort: reviewSortParam } = await searchParams;
   const album = await getAlbumById(id);
 
   if (!album) {
     notFound();
   }
 
+  const reviewSort = parseReviewSort(reviewSortParam);
   const user = await getUser();
   const artist = await getArtistById(album.artistId);
   const artistName = artist?.name ?? "";
@@ -144,7 +147,7 @@ export default async function AlbumDetailPage({
     isAdmin,
     ownLists,
   ] = await Promise.all([
-    getReviewsByAlbumId(id),
+    getReviewsByAlbumId(id, reviewSort),
     user ? getUserReviewForAlbum(user.id, id) : Promise.resolve(null),
     user ? getUserTrackRatingsForAlbum(user.id, id) : Promise.resolve(new Map()),
     getTrackRatingAveragesForAlbum(id),
@@ -335,10 +338,15 @@ export default async function AlbumDetailPage({
         </section>
       )}
 
-      <section className="mt-10">
-        <h2 className="mb-4 text-lg font-semibold text-[var(--foreground)]">
-          みんなのレビュー
-        </h2>
+      <section id="reviews" className="mt-10 scroll-mt-8">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-[var(--foreground)]">
+            みんなのレビュー
+          </h2>
+          {reviews.length > 0 && (
+            <ReviewSortTabs albumId={album.id} sort={reviewSort} />
+          )}
+        </div>
         {reviews.length > 0 ? (
           <div className="flex flex-col gap-4">
             {reviews.map((review) => (

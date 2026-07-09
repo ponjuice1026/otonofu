@@ -21,11 +21,17 @@ import type {
 type ThreadPollProps = {
   poll: DiscussionPoll;
   canAddOption?: boolean;
+  /** スレが凍結中か（監査 D-3）。凍結中は投票フォーム・選択肢追加を隠す。 */
+  isLocked?: boolean;
 };
 
 const initialState: ThreadActionState = {};
 
-export function ThreadPoll({ poll, canAddOption = false }: ThreadPollProps) {
+export function ThreadPoll({
+  poll,
+  canAddOption = false,
+  isLocked = false,
+}: ThreadPollProps) {
   const router = useRouter();
   const [displayPoll, setDisplayPoll] = useState(poll);
   const [state, formAction, pending] = useActionState(
@@ -100,6 +106,10 @@ export function ThreadPoll({ poll, canAddOption = false }: ThreadPollProps) {
 
       {hasVoted ? (
         <PollResults poll={displayPoll} />
+      ) : isLocked ? (
+        <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-300">
+          このセッションは凍結されているため投票できません。
+        </p>
       ) : (
         <form action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="threadId" value={poll.threadId} />
@@ -148,7 +158,7 @@ export function ThreadPoll({ poll, canAddOption = false }: ThreadPollProps) {
         </p>
       )}
 
-      {canAddOption && (
+      {canAddOption && !isLocked && (
         <ThreadPollAddOption
           threadId={poll.threadId}
           optionCount={poll.options.length}

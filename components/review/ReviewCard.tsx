@@ -8,6 +8,7 @@ import { AlbumCover } from "@/components/spotify/AlbumCover";
 import { ExpandableText } from "@/components/ui/ExpandableText";
 import { UserLink } from "@/components/user/UserLink";
 import { criteriaFromReview } from "@/lib/ratings";
+import { formatThreadDate } from "@/lib/threads/format";
 import type { ReactionState, Review, ReviewComment } from "@/lib/types";
 
 type ReviewCardProps = {
@@ -91,7 +92,9 @@ export function ReviewCard({
                   name={review.username}
                   className="font-medium text-neutral-300 transition hover:text-white"
                 />
-                <time dateTime={review.createdAt}>{review.createdAt}</time>
+                <time dateTime={review.createdAt}>
+                  {formatThreadDate(review.createdAt)}
+                </time>
               </div>
               <CriteriaRatingsSummary
                 criteria={criteria}
@@ -108,7 +111,9 @@ export function ReviewCard({
                 name={review.username}
                 className="font-medium text-neutral-300 transition hover:text-white"
               />
-              <time dateTime={review.createdAt}>{review.createdAt}</time>
+              <time dateTime={review.createdAt}>
+                {formatThreadDate(review.createdAt)}
+              </time>
             </div>
           )}
         </div>

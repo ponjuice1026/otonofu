@@ -30,6 +30,8 @@ type ThreadPostListProps = {
   onToggleReplies: (node: DiscussionPostNode) => void;
   onCancelReply: () => void;
   onPosted: () => void;
+  /** スレが凍結中か（監査 D-3）。凍結中は返信フォーム・返信ボタンを隠す。 */
+  isLocked?: boolean;
 };
 
 const EMPTY_REACTION: ReactionState = { good: 0, bad: 0, userReaction: null };
@@ -49,6 +51,7 @@ type RedditCommentItemProps = {
   onToggleReplies: (node: DiscussionPostNode) => void;
   onCancelReply: () => void;
   onPosted: () => void;
+  isLocked: boolean;
 };
 
 function RedditCommentItem({
@@ -66,6 +69,7 @@ function RedditCommentItem({
   onToggleReplies,
   onCancelReply,
   onPosted,
+  isLocked,
 }: RedditCommentItemProps) {
   const isReplyTarget = replyToPostId === node.id;
   const repliesHidden = collapsedIds.has(node.id);
@@ -105,13 +109,15 @@ function RedditCommentItem({
       />
 
       <div className="reddit-comment__toolbar">
-        <button
-          type="button"
-          onClick={() => onReplyClick(node)}
-          className="reddit-comment__toolbar-action"
-        >
-          {isReplyTarget ? "キャンセル" : "返信"}
-        </button>
+        {!isLocked && (
+          <button
+            type="button"
+            onClick={() => onReplyClick(node)}
+            className="reddit-comment__toolbar-action"
+          >
+            {isReplyTarget ? "キャンセル" : "返信"}
+          </button>
+        )}
         <ReportButton
           targetType="discussion_post"
           targetId={node.id}
@@ -125,7 +131,7 @@ function RedditCommentItem({
         </div>
       </div>
 
-      {isReplyTarget && (
+      {isReplyTarget && !isLocked && (
         <div
           id={`reply-form-${node.id}`}
           className="reddit-comment__reply-form scroll-mt-24"
@@ -182,6 +188,7 @@ function RedditCommentItem({
                 onToggleReplies={onToggleReplies}
                 onCancelReply={onCancelReply}
                 onPosted={onPosted}
+                isLocked={isLocked}
               />
             ))}
           </div>
@@ -205,6 +212,7 @@ export function ThreadPostList({
   onToggleReplies,
   onCancelReply,
   onPosted,
+  isLocked = false,
 }: ThreadPostListProps) {
   const postTree = useMemo(() => buildDiscussionPostTree(posts), [posts]);
 
@@ -235,6 +243,7 @@ export function ThreadPostList({
           onToggleReplies={onToggleReplies}
           onCancelReply={onCancelReply}
           onPosted={onPosted}
+          isLocked={isLocked}
         />
       ))}
     </div>

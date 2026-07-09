@@ -2,6 +2,8 @@ export type SiteNavItem = {
   href: string;
   label: string;
   featured?: boolean;
+  /** true の場合、ログイン中のユーザーにのみ表示する */
+  requiresAuth?: boolean;
   match: (pathname: string) => boolean;
 };
 
@@ -27,6 +29,12 @@ export const HEADER_NAV_ITEMS: SiteNavItem[] = [
     href: "/charts",
     label: "ランキング",
     match: (path) => path.startsWith("/charts"),
+  },
+  {
+    href: "/following",
+    label: "フォロー中",
+    requiresAuth: true,
+    match: (path) => path.startsWith("/following"),
   },
 ];
 

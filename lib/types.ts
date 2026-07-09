@@ -99,6 +99,10 @@ export type DiscussionThread = {
   kind: "album" | "topic";
   featuredRank: number | null;
   featuredNote: string | null;
+  /** 凍結日時（ISO文字列）。null なら非凍結（監査 D-3）。 */
+  lockedAt: string | null;
+  /** 凍結理由（任意）。 */
+  lockReason: string | null;
   createdAt: string;
   updatedAt: string;
 };

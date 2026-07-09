@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { DeleteThreadButton } from "@/components/thread/DeleteThreadButton";
+import { LockThreadButton } from "@/components/thread/LockThreadButton";
 import { ThreadPoll } from "@/components/thread/ThreadPoll";
 import { ThreadPostsSection } from "@/components/thread/ThreadPostsSection";
 import { ThreadPostsPagination } from "@/components/thread/ThreadPostsPagination";
@@ -100,6 +101,7 @@ export default async function ThreadDetailPage({
   }
 
   const canDeleteThread = isAdmin || thread.authorId === user?.id;
+  const isLocked = Boolean(thread.lockedAt);
   const mightHaveReview = Boolean(thread.reviewId || thread.albumId);
 
   const [sessionReview, reactionMap, canAddOption, profile] = await Promise.all([
@@ -160,10 +162,19 @@ export default async function ThreadDetailPage({
             閲覧 {thread.viewCount.toLocaleString("ja-JP")} · 返信{" "}
             {thread.postCount}
           </p>
+          {isLocked && (
+            <p className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-300">
+              このセッションは凍結されています。
+              {thread.lockReason ? `（理由: ${thread.lockReason}）` : ""}
+            </p>
+          )}
           {canDeleteThread && (
             <div className="mt-3">
               <DeleteThreadButton threadId={thread.id} isAdmin={isAdmin} />
             </div>
+          )}
+          {isAdmin && (
+            <LockThreadButton threadId={thread.id} isLocked={isLocked} />
           )}
         </div>
       ) : (
@@ -196,13 +207,24 @@ export default async function ThreadDetailPage({
             閲覧 {thread.viewCount.toLocaleString("ja-JP")} · 返信{" "}
             {thread.postCount}
           </p>
+          {isLocked && (
+            <p className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-300">
+              このセッションは凍結されています。
+              {thread.lockReason ? `（理由: ${thread.lockReason}）` : ""}
+            </p>
+          )}
           {canDeleteThread && (
             <DeleteThreadButton threadId={thread.id} isAdmin={isAdmin} />
+          )}
+          {isAdmin && (
+            <LockThreadButton threadId={thread.id} isLocked={isLocked} />
           )}
         </article>
       )}
 
-      {poll && <ThreadPoll poll={poll} canAddOption={canAddOption} />}
+      {poll && (
+        <ThreadPoll poll={poll} canAddOption={canAddOption} isLocked={isLocked} />
+      )}
 
       <div id="comments" className="scroll-mt-4">
         {rootPostCount > POSTS_PAGE_SIZE && (
@@ -222,6 +244,7 @@ export default async function ThreadDetailPage({
           currentUserId={user?.id ?? null}
           defaultDisplayName={defaultDisplayName}
           totalPostCount={thread.postCount}
+          isLocked={isLocked}
         />
 
         <ThreadPostsPagination

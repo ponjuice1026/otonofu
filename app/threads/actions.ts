@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { ensureProfile, getProfile } from "@/lib/auth/profile";
 import { getUser } from "@/lib/auth/session";
@@ -26,6 +27,7 @@ import {
 import { getOrCreateVoterKey, getVoterKey } from "@/lib/threads/voter";
 import { computeThreadLocalId, jstDateKey } from "@/lib/threads/thread-id";
 import { resolveThreadIdSalt } from "@/lib/threads/thread-id-salt";
+import { computeIpHashFromForwardedFor } from "@/lib/threads/ip-hash";
 import { registerThreadParticipant } from "@/lib/data/poll-participants";
 import { buildViewOnlyPollOptionInput } from "@/lib/threads/poll-defaults";
 import { createNotification } from "@/lib/data/notify";
@@ -58,6 +60,11 @@ function mapInsertRpcError(message: string): string {
   }
   if (normalized.includes("too many urls")) {
     return "URL が多すぎます。数を減らして再度お試しください。";
+  }
+  // 'thread locked' は 'thread not found' より先に判定する（部分一致で
+  // 'not found' 系に巻き込まれないように、より具体的な文言を先に見る）。
+  if (normalized.includes("thread locked")) {
+    return "このセッションは凍結されています。";
   }
   if (normalized.includes("thread not found")) {
     return "セッションが見つかりません。";
@@ -506,14 +513,30 @@ export async function voteDiscussionPoll(
   // レート制限は vote_discussion_poll RPC 内部で行う（A-2）。
   // 挿入は security definer RPC 経由（DB 直叩きバイパス防止）。
   const voterKey = await getOrCreateVoterKey();
+
+  // cookie依存の緩和（B-3）: x-forwarded-for の先頭IPを salt 付き sha256 で
+  // ハッシュ化し、同一スレ・同一IPハッシュからの重複投票も DB 側の部分
+  // ユニーク制約で抑止する。生IPはログ・DBに残さない。IP が取得できない
+  // 環境（ローカル開発等）では null のまま渡し、voter_key のみで判定する。
+  const headersList = await headers();
+  const forwardedFor = headersList.get("x-forwarded-for");
+  const ipHash = computeIpHashFromForwardedFor(
+    forwardedFor,
+    resolveThreadIdSalt(),
+  );
+
   const { error } = await supabase.rpc("vote_discussion_poll", {
     target_thread_id: threadId,
     target_option_id: optionId,
     voter_key: voterKey,
+    target_ip_hash: ipHash,
   });
 
   if (error) {
     // 二重投票（unique 制約違反 23505）は専用メッセージに。
+    // voter_key 由来(thread_id, voter_key)か ip_hash 由来
+    // (thread_id, ip_hash 部分ユニーク)かは区別せず、同一メッセージにまとめる
+    // （IP 共有環境での誤検知を過度に強調しないため）。
     if (error.code === "23505" || /duplicate key|23505/i.test(error.message)) {
       return { error: "このセッションにはすでに投票済みです。" };
     }
@@ -693,4 +716,93 @@ export async function deleteDiscussionPost(
 
   revalidatePath(`/threads/${post.thread_id}`);
   return { success: "削除しました。" };
+}
+
+// ---------------------------------------------------------------------------
+// スレ凍結（管理者専用）（監査 D-3）
+//   新規投稿・投票の停止は create_discussion_post / vote_discussion_poll
+//   RPC 側（add_thread_lock.sql）で強制する。ここは凍結フラグの更新のみ。
+// ---------------------------------------------------------------------------
+
+export async function lockThread(
+  threadId: string,
+  reason?: string,
+): Promise<{ error?: string; success?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { error: "Supabase が未設定です。" };
+  }
+
+  const admin = await isCurrentUserAdmin();
+  if (!admin) {
+    return { error: "管理者権限が必要です。" };
+  }
+
+  if (!threadId) {
+    return { error: "セッション ID が不正です。" };
+  }
+
+  const trimmedReason = reason?.trim() || null;
+  if (trimmedReason && trimmedReason.length > 200) {
+    return { error: "凍結理由は200字以内で入力してください。" };
+  }
+
+  const supabase = await createClient();
+  // DB 側 RPC（lock_discussion_thread）でも current_user_is_admin() を
+  // 強制する（多層防御）。RPC 内部で auth.uid() を locked_by に使う。
+  const { error } = await supabase.rpc("lock_discussion_thread", {
+    target_thread_id: threadId,
+    reason: trimmedReason,
+  });
+
+  if (error) {
+    if (error.message.toLowerCase().includes("thread not found")) {
+      return { error: "セッションが見つかりません。" };
+    }
+    if (error.message.toLowerCase().includes("admin required")) {
+      return { error: "管理者権限が必要です。" };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath(`/threads/${threadId}`);
+  revalidatePath("/threads");
+  revalidatePath("/admin");
+  return { success: "セッションを凍結しました。" };
+}
+
+export async function unlockThread(
+  threadId: string,
+): Promise<{ error?: string; success?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { error: "Supabase が未設定です。" };
+  }
+
+  const admin = await isCurrentUserAdmin();
+  if (!admin) {
+    return { error: "管理者権限が必要です。" };
+  }
+
+  if (!threadId) {
+    return { error: "セッション ID が不正です。" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("unlock_discussion_thread", {
+    target_thread_id: threadId,
+  });
+
+  if (error) {
+    if (error.message.toLowerCase().includes("thread not found")) {
+      return { error: "セッションが見つかりません。" };
+    }
+    if (error.message.toLowerCase().includes("admin required")) {
+      return { error: "管理者権限が必要です。" };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath(`/threads/${threadId}`);
+  revalidatePath("/threads");
+  revalidatePath("/admin");
+  return { success: "凍結を解除しました。" };
 }

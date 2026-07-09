@@ -4,8 +4,11 @@ import { Logo } from "@/components/layout/Logo";
 import { NavLinks } from "@/components/layout/NavLinks";
 import { SearchAutocomplete } from "@/components/layout/SearchAutocomplete";
 import { ThreadCreateLink } from "@/components/layout/ThreadCreateLink";
+import { getUser } from "@/lib/auth/session";
 
-export function Header() {
+export async function Header() {
+  const user = await getUser();
+
   return (
     <header className="site-header sticky top-0 z-50">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6">
@@ -24,7 +27,7 @@ export function Header() {
                 className="hidden h-5 w-px bg-[var(--border)] sm:block"
                 aria-hidden
               />
-              <NavLinks />
+              <NavLinks loggedIn={Boolean(user)} />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <ThreadCreateLink />

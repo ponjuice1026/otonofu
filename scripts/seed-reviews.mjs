@@ -268,7 +268,7 @@ async function main() {
       rUpd++;
     } else {
       reviewId = webcrypto.randomUUID();
-      const { error } = await sb.from("reviews").insert({ id: reviewId, created_at: now.slice(0, 10), ...payload });
+      const { error } = await sb.from("reviews").insert({ id: reviewId, created_at: now, ...payload });
       if (error) throw new Error(`review insert 失敗 (${r.album}): ${error.message}`);
       rIns++;
     }

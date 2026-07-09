@@ -78,6 +78,7 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+#variable_conflict use_variable
 declare
   limit_key text;
   normalized_body text;

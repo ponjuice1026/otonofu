@@ -42,6 +42,30 @@ SQL は Supabase Dashboard → SQL Editor に貼って実行。各ファイル�
     discussion_categories テーブル + 8カテゴリseed + discussion_threads.category_id。
     ※ current_user_is_admin と discussion_threads に依存。
 
+## 追加改善分（レビュー時刻精度・スレ凍結・投票緩和）の migration
+
+上記10本の後に、以下を順に適用する（すべて再実行安全）。
+
+> **重要バグ修正**: `update_moderation_rpc.sql`（7番）の create_discussion_post には
+> 引数 `parent_post_id` と列 `parent_post_id` の曖昧参照バグがあり、**返信投稿が失敗**する。
+> 7番を適用済みの環境では、直後に **`fix_parent_post_id_ambiguous.sql`** を適用して修正すること
+> （`#variable_conflict use_variable` プラグマを足すだけ・シグネチャ不変）。
+> 12番 `add_thread_lock.sql` も修正済みの版で create_discussion_post を再定義するため、
+> 12番まで順に当てるなら最終的に修正版になる（fix単独適用は7番だけ先に試す場合の保険）。
+
+11. **`alter_reviews_created_at_timestamptz.sql`**（レビュー時刻精度）
+    reviews.created_at を date→timestamptz に変更 + default now() + index。※ reviews のみに依存、独立。
+12. **`add_thread_lock.sql`**（スレ凍結）
+    discussion_threads に locked_at/locked_by/lock_reason 追加。create_discussion_post と
+    vote_discussion_poll を「凍結チェック込み」で create or replace。lock/unlock RPC 追加。
+    ※ 7(update_moderation_rpc.sql)の後に適用すること（最新RPCをベースに更新するため）。
+13. **`add_poll_vote_ip_hash.sql`**（投票のcookie依存緩和）
+    discussion_poll_votes に ip_hash 追加 + 部分ユニークindex。vote_discussion_poll を
+    4引数版(ip_hash対応)に create or replace し、**旧3引数版を drop**。
+    ※ 12 の後に適用すること。
+
+新 env は不要（IPハッシュのsaltは既存の THREAD_ID_SALT→VIEW_HASH_SALT→Supabase URL を再利用）。
+
 ## 最後に必ず実行（BANの抜け穴を塞ぐ）
 
 `create_discussion_post` を8引数版に更新した際、Postgresの仕様で**旧6引数版が

@@ -143,7 +143,7 @@ export async function submitAlbumReview(
         id: reviewId,
         album_id: album.id,
         user_id: user.id,
-        created_at: now.slice(0, 10),
+        created_at: now,
         ...reviewPayloadWithSession,
       });
 
@@ -153,7 +153,7 @@ export async function submitAlbumReview(
           id: reviewId,
           album_id: album.id,
           user_id: user.id,
-          created_at: now.slice(0, 10),
+          created_at: now,
           ...reviewPayload,
         }));
       }

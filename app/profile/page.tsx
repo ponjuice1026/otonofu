@@ -152,6 +152,23 @@ export default async function ProfilePage() {
             </dd>
           </a>
         </dl>
+        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+          <Link
+            href={`/users/${user.id}/following`}
+            className="link-accent hover:underline"
+          >
+            フォロー中 →
+          </Link>
+          <Link
+            href={`/users/${user.id}/followers`}
+            className="link-accent hover:underline"
+          >
+            フォロワー →
+          </Link>
+          <Link href="/following" className="link-accent hover:underline">
+            フォロー中の新着レビュー →
+          </Link>
+        </div>
       </section>
 
       <section className="surface-panel mb-8 px-5 py-4">

@@ -1,5 +1,7 @@
 import { mapReview } from "@/lib/data/mappers";
+import { getReviewReactionStates } from "@/lib/data/reactions";
 import { getThreadIdsByReviewIds } from "@/lib/reviews/review-session";
+import { sortReviews, type ReviewSort } from "@/lib/reviews/review-sort";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Review } from "@/lib/types";
@@ -258,7 +260,10 @@ export async function getTrendingReviews(limit = 6): Promise<Review[]> {
   }
 }
 
-export async function getReviewsByAlbumId(albumId: string): Promise<Review[]> {
+export async function getReviewsByAlbumId(
+  albumId: string,
+  sort: ReviewSort = "newest",
+): Promise<Review[]> {
   if (!isSupabaseConfigured()) {
     return [];
   }
@@ -277,7 +282,21 @@ export async function getReviewsByAlbumId(albumId: string): Promise<Review[]> {
       return [];
     }
 
-    return attachThreadIds(mapReviews(data as DbReview[]));
+    const reviews = await attachThreadIds(mapReviews(data as DbReview[]));
+    if (sort === "newest" || reviews.length === 0) {
+      return reviews;
+    }
+
+    if (sort === "rating") {
+      return sortReviews(reviews, sort);
+    }
+
+    // helpful: good リアクション数が必要なので取得してから並べ替える
+    const reactionMap = await getReviewReactionStates(reviews.map((r) => r.id));
+    const goodCountByReviewId = new Map(
+      [...reactionMap.entries()].map(([id, state]) => [id, state.good]),
+    );
+    return sortReviews(reviews, sort, goodCountByReviewId);
   } catch (err) {
     console.error("[Supabase] getReviewsByAlbumId:", err);
     return [];

@@ -39,6 +39,7 @@ create table if not exists public.reviews (
   rating numeric(2, 1) not null,
   body text not null default '',
   created_at date not null default current_date
+  -- created_at は timestamptz に変更済み（supabase/migrations/alter_reviews_created_at_timestamptz.sql 参照）
 );
 
 alter table public.artists enable row level security;

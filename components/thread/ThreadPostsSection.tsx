@@ -22,6 +22,8 @@ type ThreadPostsSectionProps = {
   defaultDisplayName: string | null;
   /** スレ全体のコメント数（ページ跨ぎの総数）。未指定なら表示中の件数。 */
   totalPostCount?: number;
+  /** スレが凍結中か（監査 D-3）。凍結中は投稿フォームを隠す。 */
+  isLocked?: boolean;
 };
 
 function collectAncestorIds(
@@ -49,6 +51,7 @@ export function ThreadPostsSection({
   currentUserId,
   defaultDisplayName,
   totalPostCount,
+  isLocked = false,
 }: ThreadPostsSectionProps) {
   const [replyTo, setReplyTo] = useState<DiscussionPost | null>(null);
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() =>
@@ -186,6 +189,7 @@ export function ThreadPostsSection({
           onToggleReplies={handleToggleReplies}
           onCancelReply={handleCancelReply}
           onPosted={handlePosted}
+          isLocked={isLocked}
         />
       </section>
 
@@ -196,12 +200,18 @@ export function ThreadPostsSection({
         <h2 className="mb-4 text-lg font-semibold text-zinc-100">
           コメントを投稿
         </h2>
-        <ThreadPostForm
-          threadId={threadId}
-          isLoggedIn={isLoggedIn}
-          defaultDisplayName={defaultDisplayName}
-          onPosted={handlePosted}
-        />
+        {isLocked ? (
+          <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-300">
+            このセッションは凍結されています。新規の投稿・返信・投票はできません。
+          </p>
+        ) : (
+          <ThreadPostForm
+            threadId={threadId}
+            isLoggedIn={isLoggedIn}
+            defaultDisplayName={defaultDisplayName}
+            onPosted={handlePosted}
+          />
+        )}
       </section>
     </>
   );

@@ -74,6 +74,8 @@ function mapThread(
     kind: row.review_id ? "album" : "topic",
     featuredRank: row.featured_rank ?? null,
     featuredNote: row.featured_note ?? null,
+    lockedAt: row.locked_at ?? null,
+    lockReason: row.lock_reason ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

@@ -95,6 +95,12 @@ export type DbDiscussionThread = {
   featured_rank: number | null;
   featured_note: string | null;
   featured_at: string | null;
+  /** 凍結日時。null なら非凍結（監査 D-3）。 */
+  locked_at: string | null;
+  /** 凍結を行った管理者の uuid。既存行や解除後は null。 */
+  locked_by: string | null;
+  /** 凍結理由（任意）。 */
+  lock_reason: string | null;
   created_at: string;
   updated_at: string;
 };
