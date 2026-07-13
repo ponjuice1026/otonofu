@@ -43,16 +43,25 @@ export function AvatarUploader({
   );
   const [isRemoving, startRemoving] = useTransition();
 
-  useEffect(() => {
+  const [prevAvatarUrl, setPrevAvatarUrl] = useState(currentAvatarUrl);
+  if (currentAvatarUrl !== prevAvatarUrl) {
+    setPrevAvatarUrl(currentAvatarUrl);
+    setPreviewUrl(currentAvatarUrl);
+  }
+
+  const [prevUploadState, setPrevUploadState] = useState(state);
+  if (state !== prevUploadState) {
+    setPrevUploadState(state);
     if (state.success && state.avatarUrl) {
       setPreviewUrl(state.avatarUrl);
+    }
+  }
+
+  useEffect(() => {
+    if (state.success && state.avatarUrl) {
       router.refresh();
     }
   }, [state.success, state.avatarUrl, router]);
-
-  useEffect(() => {
-    setPreviewUrl(currentAvatarUrl);
-  }, [currentAvatarUrl]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

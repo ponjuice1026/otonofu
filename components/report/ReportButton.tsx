@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import {
   submitContentReport,
   type ReportActionState,
@@ -38,11 +38,13 @@ export function ReportButton({
     initialState,
   );
 
-  useEffect(() => {
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
     if (state.success) {
       setOpen(false);
     }
-  }, [state.success]);
+  }
 
   if (state.success && !open) {
     return (

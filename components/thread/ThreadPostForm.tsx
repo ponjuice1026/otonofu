@@ -42,11 +42,18 @@ export function ThreadPostForm({
     initialState,
   );
 
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
+    if (state.success) {
+      setPostAnonymously(false);
+      setAnonymousNameInput("");
+    }
+  }
+
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset();
-      setPostAnonymously(false);
-      setAnonymousNameInput("");
       onPosted();
       router.refresh();
     }

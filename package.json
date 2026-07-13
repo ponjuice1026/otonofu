@@ -27,7 +27,8 @@
     "backfill:tracks": "tsx scripts/backfill-tracks.ts",
     "backfill:tracks:all": "tsx scripts/backfill-tracks.ts --limit=0 --delay=1500",
     "seed:reviews": "node scripts/seed-reviews.mjs",
-    "import:missing": "tsx scripts/import-missing-albums.ts"
+    "import:missing": "tsx scripts/import-missing-albums.ts",
+    "match:spotify": "tsx scripts/match-spotify.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

@@ -86,24 +86,20 @@ export function ThreadPostsSection({
     [posts],
   );
 
-  useEffect(() => {
-    if (replyTo) {
-      expandPostPath(replyTo.id);
-    }
-  }, [replyTo, expandPostPath]);
-
-  const handleReplyClick = useCallback((post: DiscussionPost) => {
-    setReplyTo((current) => {
-      const next = current?.id === post.id ? null : post;
-      if (next) {
+  const handleReplyClick = useCallback(
+    (post: DiscussionPost) => {
+      const isOpening = replyTo?.id !== post.id;
+      setReplyTo(isOpening ? post : null);
+      if (isOpening) {
+        expandPostPath(post.id);
         window.setTimeout(() => {
-          const target = document.getElementById(`reply-form-${next.id}`);
+          const target = document.getElementById(`reply-form-${post.id}`);
           target?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 50);
       }
-      return next;
-    });
-  }, []);
+    },
+    [replyTo, expandPostPath],
+  );
 
   const handleJumpToPost = useCallback(
     (postId: string) => {
@@ -126,6 +122,7 @@ export function ThreadPostsSection({
     if (!hash.startsWith("#post-")) return;
     const postId = hash.slice("#post-".length);
     if (!postId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the URL hash on mount to jump to a post; not a derived-state sync
     handleJumpToPost(postId);
   }, [posts, handleJumpToPost]);
 

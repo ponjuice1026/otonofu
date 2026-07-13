@@ -38,10 +38,17 @@ export function ThreadPollAddOption({
     [option],
   );
 
-  useEffect(() => {
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
     if (state.success) {
       setOpen(false);
       setOption({ type: "text", label: "" });
+    }
+  }
+
+  useEffect(() => {
+    if (state.success) {
       router.refresh();
     }
   }, [state.success, router]);

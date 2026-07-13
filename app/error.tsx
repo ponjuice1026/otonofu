@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 
 type ErrorPageProps = {
@@ -23,9 +24,9 @@ export default function Error({ error, reset }: ErrorPageProps) {
         <button type="button" onClick={() => reset()} className="btn-primary">
           再試行
         </button>
-        <a href="/" className="btn-secondary">
+        <Link href="/" className="btn-secondary">
           ホームへ戻る
-        </a>
+        </Link>
       </div>
     </div>
   );

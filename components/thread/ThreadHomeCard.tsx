@@ -53,7 +53,7 @@ export function ThreadHomeCard({
       )}
 
       {showNote && thread.featuredNote && (
-        <p className="thread-home-card__reason">"{thread.featuredNote}"</p>
+        <p className="thread-home-card__reason">&quot;{thread.featuredNote}&quot;</p>
       )}
 
       <h3 className="thread-home-card__title">{thread.title}</h3>

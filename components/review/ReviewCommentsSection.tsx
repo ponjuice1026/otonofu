@@ -47,10 +47,17 @@ export function ReviewCommentsSection({
     initialState,
   );
 
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
+    if (state.success) {
+      setReplyTo(null);
+    }
+  }
+
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset();
-      setReplyTo(null);
       router.refresh();
     }
   }, [state.success, router]);

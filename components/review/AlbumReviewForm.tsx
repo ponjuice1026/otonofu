@@ -44,7 +44,9 @@ export function AlbumReviewForm({
     initialState,
   );
 
-  useEffect(() => {
+  const [prevExistingReview, setPrevExistingReview] = useState(existingReview);
+  if (existingReview !== prevExistingReview) {
+    setPrevExistingReview(existingReview);
     setCriteria(
       existingReview
         ? criteriaFromReview(existingReview)
@@ -52,7 +54,7 @@ export function AlbumReviewForm({
     );
     setBody(existingReview?.body ?? "");
     setCreateSession(existingReview ? !existingReview.sessionOptOut : true);
-  }, [existingReview]);
+  }
 
   useEffect(() => {
     if (state.success) {

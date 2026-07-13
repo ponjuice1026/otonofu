@@ -39,26 +39,32 @@ export function ThreadPoll({
     initialState,
   );
 
-  useEffect(() => {
+  const [prevPoll, setPrevPoll] = useState(poll);
+  if (poll !== prevPoll) {
+    setPrevPoll(poll);
     setDisplayPoll(poll);
-  }, [poll]);
+  }
 
-  useEffect(() => {
-    if (!state.success || !state.votedOptionId) return;
-
-    setDisplayPoll((current) => {
-      if (current.userVotedOptionId) return current;
-
-      const votedOption = current.options.find(
+  const [prevVoteState, setPrevVoteState] = useState(state);
+  if (state !== prevVoteState) {
+    setPrevVoteState(state);
+    if (
+      state.success &&
+      state.votedOptionId &&
+      !displayPoll.userVotedOptionId
+    ) {
+      const votedOption = displayPoll.options.find(
         (option) => option.id === state.votedOptionId,
       );
       const isViewOnly = votedOption?.excludeFromTally === true;
 
-      return {
-        ...current,
+      setDisplayPoll({
+        ...displayPoll,
         userVotedOptionId: state.votedOptionId ?? null,
-        totalVotes: isViewOnly ? current.totalVotes : current.totalVotes + 1,
-        options: current.options.map((option) =>
+        totalVotes: isViewOnly
+          ? displayPoll.totalVotes
+          : displayPoll.totalVotes + 1,
+        options: displayPoll.options.map((option) =>
           option.id === state.votedOptionId
             ? {
                 ...option,
@@ -68,10 +74,14 @@ export function ThreadPoll({
               }
             : option,
         ),
-      };
-    });
+      });
+    }
+  }
 
-    router.refresh();
+  useEffect(() => {
+    if (state.success && state.votedOptionId) {
+      router.refresh();
+    }
   }, [state.success, state.votedOptionId, router]);
 
   const tallyOptions = useMemo(
