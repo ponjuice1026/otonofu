@@ -1,5 +1,9 @@
+import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/static";
+import { CACHE_REVALIDATE, CACHE_TAGS } from "@/lib/cache/tags";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   DbDiscussionCategory,
   DbDiscussionPollOption,
@@ -31,11 +35,12 @@ function authorLabel(profile: DbProfile | undefined): string {
 
 async function loadAuthorNames(
   authorIds: string[],
+  client?: SupabaseClient,
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   if (authorIds.length === 0) return map;
 
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const { data } = await supabase
     .from("profiles")
     .select("id, username, display_name")
@@ -239,13 +244,11 @@ export async function getFeaturedThreads(
   }
 }
 
-export async function getTrendingThreads(
-  limit = 5,
+async function getTrendingThreadsUncached(
+  supabase: SupabaseClient,
+  limit: number,
 ): Promise<DiscussionThread[]> {
-  if (!isSupabaseConfigured()) return [];
-
   try {
-    const supabase = await createClient();
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const recentSince = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
 
@@ -265,7 +268,7 @@ export async function getTrendingThreads(
 
     const rows = data as ThreadRow[];
     const authorIds = [...new Set(rows.map((row) => row.author_id))];
-    const authorNames = await loadAuthorNames(authorIds);
+    const authorNames = await loadAuthorNames(authorIds, supabase);
 
     const threadIds = rows.map((row) => row.id);
     const recentPostCounts = new Map<string, number>();
@@ -321,6 +324,24 @@ export async function getTrendingThreads(
     console.error("[Supabase] getTrendingThreads:", err);
     return [];
   }
+}
+
+// トレンドは全ユーザー共通の公開データ。静的クライアント + unstable_cache で
+// キャッシュ（feed=120秒 + tag:threads）。スレッド/投稿更新時に無効化される。
+const getTrendingThreadsCached = unstable_cache(
+  async (limit: number): Promise<DiscussionThread[]> => {
+    const supabase = createStaticClient();
+    return getTrendingThreadsUncached(supabase, limit);
+  },
+  ["trending-threads"],
+  { revalidate: CACHE_REVALIDATE.feed, tags: [CACHE_TAGS.threads] },
+);
+
+export async function getTrendingThreads(
+  limit = 5,
+): Promise<DiscussionThread[]> {
+  if (!isSupabaseConfigured()) return [];
+  return getTrendingThreadsCached(limit);
 }
 
 async function getUserInterestIds(

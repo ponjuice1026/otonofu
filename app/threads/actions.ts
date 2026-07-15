@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cache/tags";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
@@ -310,6 +311,7 @@ export async function saveDiscussionThread(
 
     revalidatePath("/threads");
     revalidatePath("/threads/new");
+    revalidateTag(CACHE_TAGS.threads, "max");
 
     if (intent === "publish") {
       redirect(`/threads/${savedThreadId}`);
@@ -480,6 +482,7 @@ export async function createDiscussionPost(
 
   revalidatePath(`/threads/${threadId}`);
   revalidatePath("/threads");
+  revalidateTag(CACHE_TAGS.threads, "max");
   return { success: "投稿しました。" };
 }
 

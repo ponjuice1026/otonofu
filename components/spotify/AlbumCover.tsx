@@ -47,7 +47,9 @@ export function AlbumCover({
                     ? "40px"
                     : "56px"
           }
-          quality={90}
+          // 小さいサムネイル(card/sm/xs)は90→75で十分。グリッドの画像量を削減。
+          // hero/lg は表示が大きいため90を維持。どちらもnext.config.qualities内。
+          quality={size === "hero" || size === "lg" ? 90 : 75}
           priority={size === "hero"}
         />
       </div>

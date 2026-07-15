@@ -11,7 +11,9 @@ import "./globals.css";
 const zenKaku = Zen_Kaku_Gothic_New({
   variable: "--font-zen",
   subsets: ["latin"],
-  weight: ["400", "500", "700", "900"],
+  // 900(font-black)はコード内で未使用のため読み込まない（日本語フォントの
+  // ウェイトは重いので削減がそのまま初回ロード軽量化になる）
+  weight: ["400", "500", "700"],
   display: "swap",
 });
 

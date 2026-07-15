@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cache/tags";
 import { getUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -149,6 +150,7 @@ export async function toggleReviewReaction(
 
   if (!result.error && albumId) {
     revalidatePath(`/albums/${albumId}`);
+    revalidateTag(CACHE_TAGS.reviews, "max");
   }
   return result;
 }

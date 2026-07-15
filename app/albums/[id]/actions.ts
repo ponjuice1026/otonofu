@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cache/tags";
 import { ensureProfile } from "@/lib/auth/profile";
 import { getUser } from "@/lib/auth/session";
 import { getAlbumById } from "@/lib/data/albums";
@@ -190,6 +191,9 @@ export async function submitAlbumReview(
     revalidatePath(`/albums/${albumId}`);
     revalidatePath("/");
     revalidatePath("/charts");
+    revalidateTag(CACHE_TAGS.albums, "max");
+    revalidateTag(CACHE_TAGS.reviews, "max");
+    revalidateTag(CACHE_TAGS.threads, "max");
     revalidatePath("/threads");
     if (threadId) {
       revalidatePath(`/threads/${threadId}`);
@@ -277,6 +281,9 @@ export async function deleteAlbumReview(albumId: string): Promise<RatingActionSt
     revalidatePath(`/albums/${albumId}`);
     revalidatePath("/");
     revalidatePath("/charts");
+    revalidateTag(CACHE_TAGS.albums, "max");
+    revalidateTag(CACHE_TAGS.reviews, "max");
+    revalidateTag(CACHE_TAGS.threads, "max");
     revalidatePath("/threads");
 
     return { success: "レビューを削除しました。" };

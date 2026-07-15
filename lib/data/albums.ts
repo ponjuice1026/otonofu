@@ -8,9 +8,13 @@ import {
   rankingPeriodSince,
 } from "@/lib/albums/ranking-filters";
 import { BAYESIAN_PRIOR_WEIGHT, bayesianScore } from "@/lib/albums/bayesian";
+import { unstable_cache } from "next/cache";
 import { getArtistMetaMapForIds } from "@/lib/data/artists";
 import { getReleaseTypeLabel } from "@/lib/release-types";
 import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/static";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { CACHE_REVALIDATE, CACHE_TAGS } from "@/lib/cache/tags";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Album } from "@/lib/types";
 import type { DbAlbum } from "@/lib/supabase/types";
@@ -109,7 +113,7 @@ export async function getRecentAlbums(limit: number): Promise<Album[]> {
  * (それでも DB 全件を対象にした RPC ほど厳密ではない点はフォールバック止まりとする)。
  */
 async function getTopRatedAlbumsBySimpleAverage(
-  supabase: SupabaseServerClient,
+  supabase: SupabaseClient,
   limit: number,
   sort: RankingSort,
 ): Promise<Album[]> {
@@ -163,7 +167,7 @@ async function getTopRatedAlbumsBySimpleAverage(
  * ranked_albums_bayesian RPC が未適用の場合のJSフォールバックでのみ使う。
  */
 async function getGlobalAverageRating(
-  supabase: SupabaseServerClient,
+  supabase: SupabaseClient,
 ): Promise<number> {
   const { data, error } = await supabase
     .from("albums")
@@ -183,38 +187,48 @@ function mapRankedBayesianRow(row: DbRankedAlbumBayesianRow): Album {
   return mapAlbum(row as DbAlbum);
 }
 
+// ランキングは全ユーザー共通の公開データ。RPC/フォールバックとも Cookie に
+// 依存しないため、静的クライアント + unstable_cache でキャッシュする。
+// レビュー投稿・評価更新時は revalidateTag(CACHE_TAGS.albums) で無効化される。
+const getTopRatedAlbumsCached = unstable_cache(
+  async (limit: number, sort: RankingSort): Promise<Album[]> => {
+    try {
+      const supabase = createStaticClient();
+
+      // ベイズ加重平均でランキングを並べる RPC を優先する。
+      // 評価1件の満点が、評価多数の高評価より上位に来てしまう単純平均の
+      // 問題を SQL 側で補正する（レビュー全件フェッチも回避できる）。
+      const { data, error } = await supabase.rpc("ranked_albums_bayesian", {
+        prior_weight: BAYESIAN_PRIOR_WEIGHT,
+        result_limit: limit,
+        sort_mode: sort,
+      });
+
+      if (!error && data) {
+        return (data as DbRankedAlbumBayesianRow[]).map(mapRankedBayesianRow);
+      }
+
+      console.warn(
+        "[Supabase] ranked_albums_bayesian RPC unavailable, falling back to simple average:",
+        error?.message,
+      );
+
+      return await getTopRatedAlbumsBySimpleAverage(supabase, limit, sort);
+    } catch (err) {
+      console.error("[Supabase] getTopRatedAlbums:", err);
+      return [];
+    }
+  },
+  ["top-rated-albums"],
+  { revalidate: CACHE_REVALIDATE.feed, tags: [CACHE_TAGS.albums] },
+);
+
 export async function getTopRatedAlbums(
   limit: number,
   sort: RankingSort = "rating",
 ): Promise<Album[]> {
   if (!isSupabaseConfigured()) return [];
-
-  try {
-    const supabase = await createClient();
-
-    // ベイズ加重平均でランキングを並べる RPC を優先する。
-    // 評価1件の満点が、評価多数の高評価より上位に来てしまう単純平均の
-    // 問題を SQL 側で補正する（レビュー全件フェッチも回避できる）。
-    const { data, error } = await supabase.rpc("ranked_albums_bayesian", {
-      prior_weight: BAYESIAN_PRIOR_WEIGHT,
-      result_limit: limit,
-      sort_mode: sort,
-    });
-
-    if (!error && data) {
-      return (data as DbRankedAlbumBayesianRow[]).map(mapRankedBayesianRow);
-    }
-
-    console.warn(
-      "[Supabase] ranked_albums_bayesian RPC unavailable, falling back to simple average:",
-      error?.message,
-    );
-
-    return await getTopRatedAlbumsBySimpleAverage(supabase, limit, sort);
-  } catch (err) {
-    console.error("[Supabase] getTopRatedAlbums:", err);
-    return [];
-  }
+  return getTopRatedAlbumsCached(limit, sort);
 }
 
 /**
@@ -640,32 +654,51 @@ export type AlbumCoverInfo = {
   spotifyId?: string;
 };
 
+type DbAlbumCoverRow = {
+  id: string;
+  cover_url: string | null;
+  cover_color: string;
+  spotify_id: string | null;
+};
+
+const getAlbumCoverRows = unstable_cache(
+  async (uniqueSortedIds: string[]): Promise<DbAlbumCoverRow[]> => {
+    try {
+      const supabase = createStaticClient();
+      const { data, error } = await supabase
+        .from("albums")
+        .select("id, cover_url, cover_color, spotify_id")
+        .in("id", uniqueSortedIds);
+
+      if (error || !data) return [];
+
+      return data as DbAlbumCoverRow[];
+    } catch {
+      return [];
+    }
+  },
+  ["album-cover-rows"],
+  { revalidate: CACHE_REVALIDATE.lookup, tags: [CACHE_TAGS.albums] },
+);
+
+// 指定 ID のアルバムカバー情報を取得する（キャッシュ対象）。
+// unstable_cache は Map をシリアライズできないため行配列を返し、
+// Map の組み立ては呼び出し側で行う。静的クライアントは Cookie 非依存。
 export async function getAlbumCoverMapForIds(
   albumIds: string[],
 ): Promise<Map<string, AlbumCoverInfo>> {
   const map = new Map<string, AlbumCoverInfo>();
   if (!isSupabaseConfigured() || albumIds.length === 0) return map;
 
-  const unique = [...new Set(albumIds)];
+  const unique = [...new Set(albumIds)].sort();
 
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("albums")
-      .select("id, cover_url, cover_color, spotify_id")
-      .in("id", unique);
-
-    if (error || !data) return map;
-
-    for (const row of data) {
-      map.set(row.id, {
-        coverUrl: row.cover_url ?? undefined,
-        coverColor: row.cover_color,
-        spotifyId: row.spotify_id ?? undefined,
-      });
-    }
-  } catch {
-    return map;
+  const rows = await getAlbumCoverRows(unique);
+  for (const row of rows) {
+    map.set(row.id, {
+      coverUrl: row.cover_url ?? undefined,
+      coverColor: row.cover_color,
+      spotifyId: row.spotify_id ?? undefined,
+    });
   }
 
   return map;

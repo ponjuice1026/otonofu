@@ -1,5 +1,8 @@
+import { unstable_cache } from "next/cache";
 import { mapArtist } from "@/lib/data/mappers";
 import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/static";
+import { CACHE_REVALIDATE, CACHE_TAGS } from "@/lib/cache/tags";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Artist } from "@/lib/types";
 import type { DbArtist } from "@/lib/supabase/types";
@@ -79,28 +82,43 @@ export async function getArtistName(artistId: string): Promise<string> {
   return "Unknown Artist";
 }
 
+const getArtistNameRows = unstable_cache(
+  async (
+    uniqueSortedIds: string[],
+  ): Promise<Array<{ id: string; name: string }>> => {
+    try {
+      const supabase = createStaticClient();
+      const { data, error } = await supabase
+        .from("artists")
+        .select("id, name")
+        .in("id", uniqueSortedIds);
+
+      if (error || !data) return [];
+
+      return data as Array<{ id: string; name: string }>;
+    } catch {
+      return [];
+    }
+  },
+  ["artist-name-rows"],
+  { revalidate: CACHE_REVALIDATE.lookup, tags: [CACHE_TAGS.artists] },
+);
+
+// 指定 ID のアーティスト名を取得する（キャッシュ対象）。
+// unstable_cache は Map をシリアライズできないため配列を返し、
+// Map の組み立ては呼び出し側で行う。静的クライアントは Cookie に触れないため
+// キャッシュスコープ内でも安全。
 export async function getArtistNameMapForIds(
   artistIds: string[],
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   if (!isSupabaseConfigured() || artistIds.length === 0) return map;
 
-  const unique = [...new Set(artistIds)];
+  const unique = [...new Set(artistIds)].sort();
 
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("artists")
-      .select("id, name")
-      .in("id", unique);
-
-    if (error || !data) return map;
-
-    for (const row of data) {
-      map.set(row.id, row.name);
-    }
-  } catch {
-    return map;
+  const rows = await getArtistNameRows(unique);
+  for (const row of rows) {
+    map.set(row.id, row.name);
   }
 
   return map;

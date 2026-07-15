@@ -2,8 +2,12 @@ import { mapReview } from "@/lib/data/mappers";
 import { getReviewReactionStates } from "@/lib/data/reactions";
 import { getThreadIdsByReviewIds } from "@/lib/reviews/review-session";
 import { sortReviews, type ReviewSort } from "@/lib/reviews/review-sort";
+import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/static";
+import { CACHE_REVALIDATE, CACHE_TAGS } from "@/lib/cache/tags";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Review } from "@/lib/types";
 import type { DbReview } from "@/lib/supabase/types";
 
@@ -14,10 +18,13 @@ type SessionThreadRef = {
   authorId: string;
 };
 
-async function attachThreadIds(reviews: Review[]): Promise<Review[]> {
+async function attachThreadIds(
+  reviews: Review[],
+  client?: SupabaseClient,
+): Promise<Review[]> {
   if (reviews.length === 0) return reviews;
 
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const threadIds = await getThreadIdsByReviewIds(
     supabase,
     reviews.filter((review) => !review.sessionOptOut).map((review) => review.id),
@@ -194,11 +201,11 @@ export async function getReviews(): Promise<Review[]> {
   return getRecentReviews(20);
 }
 
-export async function getTrendingReviews(limit = 6): Promise<Review[]> {
-  if (!isSupabaseConfigured()) return [];
-
+async function getTrendingReviewsUncached(
+  supabase: SupabaseClient,
+  limit: number,
+): Promise<Review[]> {
   try {
-    const supabase = await createClient();
     const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: reviewRows, error } = await supabase
@@ -214,7 +221,10 @@ export async function getTrendingReviews(limit = 6): Promise<Review[]> {
       return [];
     }
 
-    const reviews = await attachThreadIds(mapReviews(reviewRows as DbReview[]));
+    const reviews = await attachThreadIds(
+      mapReviews(reviewRows as DbReview[]),
+      supabase,
+    );
     if (reviews.length === 0) return [];
 
     const reviewIds = reviews.map((r) => r.id);
@@ -258,6 +268,22 @@ export async function getTrendingReviews(limit = 6): Promise<Review[]> {
     console.error("[Supabase] getTrendingReviews:", err);
     return [];
   }
+}
+
+// トレンドは全ユーザー共通の公開データ。静的クライアント + unstable_cache で
+// キャッシュ（feed=120秒 + tag:reviews）。レビュー投稿/削除時に無効化される。
+const getTrendingReviewsCached = unstable_cache(
+  async (limit: number): Promise<Review[]> => {
+    const supabase = createStaticClient();
+    return getTrendingReviewsUncached(supabase, limit);
+  },
+  ["trending-reviews"],
+  { revalidate: CACHE_REVALIDATE.feed, tags: [CACHE_TAGS.reviews] },
+);
+
+export async function getTrendingReviews(limit = 6): Promise<Review[]> {
+  if (!isSupabaseConfigured()) return [];
+  return getTrendingReviewsCached(limit);
 }
 
 export async function getReviewsByAlbumId(
