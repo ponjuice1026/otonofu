@@ -41,8 +41,12 @@
   --color-surface-raised: var(--surface-raised);
   --color-border: var(--border);
   --color-muted: var(--muted);
-  --font-sans: var(--font-zen), "Hiragino Sans", "Yu Gothic UI", sans-serif;
-  --font-display: var(--font-outfit), var(--font-zen), "Hiragino Sans", sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+    "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic",
+    "Yu Gothic UI", Meiryo, "Noto Sans JP", system-ui, sans-serif;
+  --font-display: var(--font-outfit), -apple-system, BlinkMacSystemFont,
+    "Hiragino Sans", "Yu Gothic Medium", "Yu Gothic", Meiryo,
+    "Noto Sans JP", sans-serif;
 }
 
 html {

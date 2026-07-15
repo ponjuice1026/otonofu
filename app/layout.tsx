@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Zen_Kaku_Gothic_New } from "next/font/google";
+import { Outfit } from "next/font/google";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DataSourceBanner } from "@/components/layout/DataSourceBanner";
 import { Footer } from "@/components/layout/Footer";
@@ -7,15 +7,6 @@ import { Header } from "@/components/layout/Header";
 import { SiteBackdrop } from "@/components/layout/SiteBackdrop";
 import { pageTitle, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
-
-const zenKaku = Zen_Kaku_Gothic_New({
-  variable: "--font-zen",
-  subsets: ["latin"],
-  // 900(font-black)はコード内で未使用のため読み込まない（日本語フォントの
-  // ウェイトは重いので削減がそのまま初回ロード軽量化になる）
-  weight: ["400", "500", "700"],
-  display: "swap",
-});
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -72,7 +63,7 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
-      className={`${zenKaku.variable} ${outfit.variable} h-full antialiased`}
+      className={`${outfit.variable} h-full antialiased`}
     >
       <body className="site-body">
         <SiteBackdrop />
