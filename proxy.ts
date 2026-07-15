@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { hasSupabaseAuthCookie } from "@/lib/auth/auth-cookie";
 
 const VIEW_COOKIE = "otonofu_viewed_threads";
 const VIEW_COOKIE_MAX_AGE = 60 * 60 * 6;
@@ -99,35 +100,40 @@ export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !key) {
-    const response = NextResponse.next({ request });
-    await trackThreadView(request, response, url, key);
-    return response;
-  }
-
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(url, key, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => {
-          request.cookies.set(name, value);
-        });
-        response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options);
-        });
-      },
-    },
-  });
+  // セッション Cookie を持つログイン済みリクエストのみトークンを更新する。
+  // 匿名リクエストやプリフェッチでは auth.getUser()（Supabase 認証サーバへの
+  // ネットワーク往復）をスキップ。proxy は全ページ・全ナビゲーションで走るため
+  // ここの往復削減が体感速度に効く。
+  const shouldRefreshSession =
+    Boolean(url && key) &&
+    !isPrefetch(request) &&
+    hasSupabaseAuthCookie(request.cookies.getAll());
 
-  try {
-    await supabase.auth.getUser();
-  } catch (err) {
-    console.error("[proxy] getUser:", err);
+  if (shouldRefreshSession) {
+    const supabase = createServerClient(url!, key!, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    });
+
+    try {
+      await supabase.auth.getUser();
+    } catch (err) {
+      console.error("[proxy] getUser:", err);
+    }
   }
 
   await trackThreadView(request, response, url, key);
