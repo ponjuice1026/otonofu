@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DataSourceBanner } from "@/components/layout/DataSourceBanner";
 import { Footer } from "@/components/layout/Footer";
@@ -75,6 +76,7 @@ export default function RootLayout({
           <div className="mobile-nav-spacer md:hidden" aria-hidden />
           <BottomNav />
         </div>
+        <Analytics />
       </body>
     </html>
   );
