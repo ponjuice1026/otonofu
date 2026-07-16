@@ -1,17 +1,16 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { AlbumCard } from "@/components/album/AlbumCard";
 import { AlbumRankingList } from "@/components/album/AlbumRankingList";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { HomeThreadFeed } from "@/components/thread/HomeThreadFeed";
-import { RecommendedThreadList } from "@/components/thread/RecommendedThreadList";
+import { FollowingReviewsSection } from "@/components/home/FollowingReviewsSection";
+import { RecommendedAlbumsSection } from "@/components/home/RecommendedAlbumsSection";
+import { RecommendedThreadsSection } from "@/components/home/RecommendedThreadsSection";
+import { SectionSkeleton } from "@/components/home/SectionSkeleton";
 import { buildReviewCardCoverProps } from "@/lib/reviews/review-card-cover";
 import { getUser } from "@/lib/auth/session";
-import {
-  getTopRatedAlbums,
-  getRecommendedAlbums,
-  getAlbumCoverMapForIds,
-} from "@/lib/data/albums";
+import { getAlbumCoverMapForIds, getTopRatedAlbums } from "@/lib/data/albums";
 import { getArtistNameMapForIds } from "@/lib/data/artists";
 import { getReviewReactionStates } from "@/lib/data/reactions";
 import { getReviewCommentCounts } from "@/lib/data/review-comments";
@@ -22,14 +21,12 @@ import {
 } from "@/lib/data/reviews";
 import {
   getDiscussionThreadsPage,
-  getRecommendedThreadsForUser,
   getTrendingThreads,
 } from "@/lib/data/threads";
 import {
   HOME_TRENDING_POOL_SIZE,
   pickHomeTrendingThreadFeed,
 } from "@/lib/threads/home-feed";
-import { getFollowingRecentReviews } from "@/lib/data/follows";
 import {
   pageTitle,
   siteUrl,
@@ -102,71 +99,40 @@ export default async function Home({ searchParams }: HomeProps) {
   const threadMode = parseFeedMode(threadsParam);
   const feedModes = { threads: threadMode, reviews: reviewMode };
 
+  // ブロッキング描画は全ユーザー共通の「公開・キャッシュ済み」フィードだけに絞る。
+  // ユーザー個別のセクション（おすすめセッション・フォロー中レビュー・
+  // おすすめアルバム）は下部で <Suspense> ストリームさせ、初期描画を待たせない。
   const user = await getUser();
 
-  const [
-    ranked,
-    homeReviews,
-    homeThreads,
-    recommendedThreads,
-    followingReviews,
-  ] = await Promise.all([
+  const [ranked, homeReviews, homeThreads] = await Promise.all([
     getTopRatedAlbums(10),
-    reviewMode === "newest"
-      ? getRecentReviews(6)
-      : getTrendingReviews(6),
+    reviewMode === "newest" ? getRecentReviews(6) : getTrendingReviews(6),
     threadMode === "newest"
       ? getDiscussionThreadsPage(1, HOME_THREADS_LIMIT, "newest")
       : getTrendingThreads(HOME_TRENDING_POOL_SIZE),
-    user ? getRecommendedThreadsForUser(user.id, 5) : Promise.resolve([]),
-    user ? getFollowingRecentReviews(user.id, 6) : Promise.resolve([]),
   ]);
-
-  const recommendedThreadIds = new Set(recommendedThreads.map((t) => t.id));
-  const filteredHomeThreads =
-    threadMode === "trending"
-      ? homeThreads.filter((t) => !recommendedThreadIds.has(t.id))
-      : homeThreads;
-
-  const threadsForSessionReviews = [
-    ...new Map(
-      [...filteredHomeThreads, ...recommendedThreads].map((thread) => [
-        thread.id,
-        thread,
-      ]),
-    ).values(),
-  ];
 
   const rankedIds = ranked.map((album) => album.id);
 
-  const [allSessionReviews, recommendedAlbums] = await Promise.all([
-    getReviewSessionsForThreads(threadsForSessionReviews, {
-      cachedReviews: homeReviews,
-    }),
-    getRecommendedAlbums(user?.id ?? null, 5, rankedIds),
-  ]);
+  const allSessionReviews = await getReviewSessionsForThreads(homeThreads, {
+    cachedReviews: homeReviews,
+  });
 
   const sessionReviewByThreadId = new Map(
     allSessionReviews
       .filter((review) => review.threadId)
       .map((review) => [review.threadId!, review]),
   );
-  const sessionReviewThreads = filteredHomeThreads
-    .map((thread) => sessionReviewByThreadId.get(thread.id))
-    .filter((review): review is NonNullable<typeof review> => Boolean(review));
-  const recommendedSessionReviews = recommendedThreads
+  const sessionReviewThreads = homeThreads
     .map((thread) => sessionReviewByThreadId.get(thread.id))
     .filter((review): review is NonNullable<typeof review> => Boolean(review));
 
   const homeThreadFeed =
     threadMode === "trending"
-      ? pickHomeTrendingThreadFeed(
-          filteredHomeThreads,
-          sessionReviewByThreadId,
-        )
+      ? pickHomeTrendingThreadFeed(homeThreads, sessionReviewByThreadId)
       : {
           reviewSessions: sessionReviewThreads,
-          regularThreads: filteredHomeThreads.filter(
+          regularThreads: homeThreads.filter(
             (thread) => !sessionReviewByThreadId.has(thread.id),
           ),
         };
@@ -177,43 +143,30 @@ export default async function Home({ searchParams }: HomeProps) {
     ...new Set([
       ...standaloneReviews.map((review) => review.id),
       ...homeThreadFeed.reviewSessions.map((review) => review.id),
-      ...recommendedSessionReviews.map((review) => review.id),
-      ...followingReviews.map((review) => review.id),
-    ]),
-  ];
-  const [reviewReactions, reviewCommentCounts] = await Promise.all([
-    getReviewReactionStates(allFeedReviewIds),
-    getReviewCommentCounts(allFeedReviewIds),
-  ]);
-
-  const artistIds = [
-    ...new Set([
-      ...ranked.map((album) => album.artistId),
-      ...recommendedAlbums.map((album) => album.artistId),
-      ...standaloneReviews.map((review) => review.artistId),
-      ...homeThreadFeed.reviewSessions.map((review) => review.artistId),
-      ...recommendedSessionReviews.map((review) => review.artistId),
-      ...followingReviews.map((review) => review.artistId),
     ]),
   ];
   const reviewAlbumIds = [
     ...new Set([
       ...standaloneReviews.map((review) => review.albumId),
       ...homeThreadFeed.reviewSessions.map((review) => review.albumId),
-      ...recommendedSessionReviews.map((review) => review.albumId),
-      ...followingReviews.map((review) => review.albumId),
       ...homeThreadFeed.regularThreads
-        .map((thread) => thread.albumId)
-        .filter((id): id is string => Boolean(id)),
-      ...recommendedThreads
         .map((thread) => thread.albumId)
         .filter((id): id is string => Boolean(id)),
     ]),
   ];
-  const [artistNames, albumCovers] = await Promise.all([
-    getArtistNameMapForIds(artistIds),
-    getAlbumCoverMapForIds(reviewAlbumIds),
-  ]);
+  // ランキング欄のアーティスト名だけが必要（レビューカードは artistName 非依存）。
+  const artistIds = [...new Set(ranked.map((album) => album.artistId))];
+
+  const [reviewReactions, reviewCommentCounts, artistNames, albumCovers] =
+    await Promise.all([
+      getReviewReactionStates(allFeedReviewIds),
+      getReviewCommentCounts(allFeedReviewIds),
+      getArtistNameMapForIds(artistIds),
+      getAlbumCoverMapForIds(reviewAlbumIds),
+    ]);
+
+  // おすすめセッションはトレンド欄で表示済みのスレを除外して重複を防ぐ。
+  const shownThreadIds = homeThreads.map((thread) => thread.id);
 
   return (
     <div className="page-shell">
@@ -321,62 +274,19 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
       </section>
 
-      {user && recommendedThreads.length > 0 && (
-        <section className="home-section mb-14">
-          <div className="section-header">
-            <div>
-              <h2 className="section-title section-title-accent section-accent-rose">
-                あなたへのおすすめセッション
-              </h2>
-              <p className="section-desc">
-                評価したアルバム・アーティストに関連するセッション
-              </p>
-            </div>
-            <Link href="/threads" className="link-accent hover:underline">
-              すべて見る →
-            </Link>
-          </div>
-          <RecommendedThreadList
-            threads={recommendedThreads}
-            reviewSessions={recommendedSessionReviews}
-            albumCovers={albumCovers}
-            reviewReactions={reviewReactions}
-            reviewCommentCounts={reviewCommentCounts}
+      {user && (
+        <Suspense fallback={<SectionSkeleton cards={3} layout="row" />}>
+          <RecommendedThreadsSection
+            userId={user.id}
+            excludeThreadIds={shownThreadIds}
           />
-        </section>
+        </Suspense>
       )}
 
-      {user && followingReviews.length > 0 && (
-        <section className="home-section mb-14">
-          <div className="section-header">
-            <div>
-              <h2 className="section-title section-title-accent section-accent-emerald">
-                フォロー中のユーザーの新着レビュー
-              </h2>
-              <p className="section-desc">
-                あなたがフォローしているユーザーの最近のレビュー
-              </p>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {followingReviews.map((review) => {
-              const { albumCoverUrl, albumCoverColor } =
-                buildReviewCardCoverProps(review.albumId, albumCovers);
-
-              return (
-                <ReviewCard
-                  key={review.id}
-                  review={review}
-                  showAlbumCover
-                  albumCoverUrl={albumCoverUrl}
-                  albumCoverColor={albumCoverColor}
-                  reactionState={reviewReactions.get(review.id)}
-                  commentCount={reviewCommentCounts.get(review.id) ?? 0}
-                />
-              );
-            })}
-          </div>
-        </section>
+      {user && (
+        <Suspense fallback={<SectionSkeleton cards={2} layout="row" />}>
+          <FollowingReviewsSection userId={user.id} />
+        </Suspense>
       )}
 
       <div className="home-secondary">
@@ -471,36 +381,12 @@ export default async function Home({ searchParams }: HomeProps) {
         <AlbumRankingList albums={ranked} artistNames={artistNames} />
       </section>
 
-      <section className="home-section">
-        <div className="section-header">
-          <div>
-            <h2 className="section-title section-title-accent section-accent-amber">
-              おすすめのアルバム
-            </h2>
-            <p className="section-desc">
-              {user
-                ? "あなたの評価履歴から選んだおすすめ"
-                : "評価の高いアルバムからピックアップ"}
-            </p>
-          </div>
-          <Link href="/charts" className="link-accent hover:underline">
-            すべて見る →
-          </Link>
-        </div>
-        {recommendedAlbums.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
-            {recommendedAlbums.map((album) => (
-              <AlbumCard
-                key={album.id}
-                album={album}
-                artistName={artistNames.get(album.artistId)}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="empty-state">おすすめのアルバムはまだありません。</p>
-        )}
-      </section>
+      <Suspense fallback={<SectionSkeleton cards={5} layout="grid" />}>
+        <RecommendedAlbumsSection
+          userId={user?.id ?? null}
+          excludeAlbumIds={rankedIds}
+        />
+      </Suspense>
       </div>
     </div>
   );
