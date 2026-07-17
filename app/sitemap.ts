@@ -6,7 +6,12 @@ import { getPublicLists } from "@/lib/data/lists";
 import { GENRES } from "@/lib/genres";
 import { siteUrl } from "@/lib/site";
 
-export const revalidate = 3600;
+// sitemap はクローラ専用で生成頻度が低い。配下のデータ取得（getAlbums /
+// getPublicLists / getDiscussionThreadsPage 等）が cookie を読む server 版
+// Supabase クライアントを内部で連鎖的に使うため、ISR(revalidate)のままだと
+// 静的レンダリング中に cookies() へ触れて DYNAMIC_SERVER_USAGE で各関数が
+// 空を返し、sitemap が欠落する。動的レンダリングにして cookie 参照を許容する。
+export const dynamic = "force-dynamic";
 
 // Google の 1 sitemap あたりの上限は 50,000 URL。
 // 現状の総件数は十分下回るため単一 sitemap で扱う。

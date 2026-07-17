@@ -1,5 +1,5 @@
 import { mapAlbum } from "@/lib/data/mappers";
-import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/static";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { GENRES, getGenreBySlug, matchGenreSlugs, type Genre } from "@/lib/genres";
 import type { Album } from "@/lib/types";
@@ -45,7 +45,7 @@ async function getArtistGenresMap(
 
   const unique = [...new Set(artistIds)];
   try {
-    const supabase = await createClient();
+    const supabase = createStaticClient();
     const { data, error } = await supabase
       .from("artists")
       .select("id, genres")
@@ -70,7 +70,7 @@ async function getGenreMatchedAlbums(slug: string): Promise<Album[]> {
   if (!getGenreBySlug(slug)) return [];
 
   try {
-    const supabase = await createClient();
+    const supabase = createStaticClient();
     const { data, error } = await supabase
       .from("albums")
       .select(ALBUM_LIST_COLUMNS)
@@ -160,7 +160,7 @@ export async function getGenreSummaries(): Promise<GenreSummary[]> {
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createStaticClient();
     const { data, error } = await supabase
       .from("albums")
       .select(ALBUM_LIST_COLUMNS)
