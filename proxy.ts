@@ -97,6 +97,18 @@ async function trackThreadView(
 }
 
 export async function proxy(request: NextRequest) {
+  // プロキシは全ページ・全ナビゲーションで走る。ここで未捕捉の例外を投げると
+  // Vercel が MIDDLEWARE_INVOCATION_FAILED を返し、サイト全体が 500 になる。
+  // 何が起きてもリクエストは素通しし、サイトを落とさないことを最優先にする。
+  try {
+    return await runProxy(request);
+  } catch (err) {
+    console.error("[proxy] unhandled:", err);
+    return NextResponse.next({ request });
+  }
+}
+
+async function runProxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
