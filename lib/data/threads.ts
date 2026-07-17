@@ -266,7 +266,27 @@ async function getTrendingThreadsUncached(
       return [];
     }
 
-    const rows = data as ThreadRow[];
+    let rows = data as ThreadRow[];
+
+    // 30日以内に更新されたスレが無い場合は、期間条件なしの更新順で母集団を確保する
+    // （過疎期に「話題のセッション」が空になるのを防ぐ）。
+    if (rows.length === 0) {
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("discussion_threads")
+        .select("*, discussion_posts ( count ), discussion_poll_options ( count )")
+        .eq("status", "published")
+        .is("featured_rank", null)
+        .order("updated_at", { ascending: false })
+        .limit(Math.max(limit * 3, 12));
+
+      if (fallbackError) {
+        console.error(
+          "[Supabase] getTrendingThreads fallback:",
+          fallbackError.message,
+        );
+      }
+      rows = (fallbackData ?? []) as ThreadRow[];
+    }
     const authorIds = [...new Set(rows.map((row) => row.author_id))];
     const authorNames = await loadAuthorNames(authorIds, supabase);
 
@@ -295,31 +315,32 @@ async function getTrendingThreadsUncached(
     }
 
     const now = Date.now();
-    const scored = rows
-      .map((row) => {
-        const thread = mapThread(row, authorNames);
-        const ageHours =
-          (now - new Date(thread.updatedAt).getTime()) / (60 * 60 * 1000);
-        const recentPosts = recentPostCounts.get(row.id) ?? 0;
-        if (recentPosts === 0 && ageHours > 168) {
-          return null;
-        }
-        const recencyBoost = 1 / Math.log2(Math.max(ageHours, 1) + 2);
-        const score =
-          (recentPosts * 12 +
-            thread.viewCount * 0.15 +
-            thread.postCount * 2 +
-            (thread.hasPoll ? 8 : 0)) *
-          recencyBoost;
-        return { thread, score };
-      })
-      .filter((item): item is { thread: DiscussionThread; score: number } =>
-        item !== null,
-      )
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+    const scoredAll = rows.map((row) => {
+      const thread = mapThread(row, authorNames);
+      const ageHours =
+        (now - new Date(thread.updatedAt).getTime()) / (60 * 60 * 1000);
+      const recentPosts = recentPostCounts.get(row.id) ?? 0;
+      const recencyBoost = 1 / Math.log2(Math.max(ageHours, 1) + 2);
+      const score =
+        (recentPosts * 12 +
+          thread.viewCount * 0.15 +
+          thread.postCount * 2 +
+          (thread.hasPoll ? 8 : 0)) *
+        recencyBoost;
+      // 「直近活動あり」= 72時間以内のレス、または更新から7日以内
+      const isActive = recentPosts > 0 || ageHours <= 168;
+      return { thread, score, isActive };
+    });
 
-    return scored.map((item) => item.thread);
+    // 直近活動のあるスレを優先。全滅時はセクションを空にせず、
+    // スコア順のフォールバックで埋める（過疎期でも「話題」を維持）。
+    const active = scoredAll.filter((item) => item.isActive);
+    const pool = active.length > 0 ? active : scoredAll;
+
+    return pool
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((item) => item.thread);
   } catch (err) {
     console.error("[Supabase] getTrendingThreads:", err);
     return [];
