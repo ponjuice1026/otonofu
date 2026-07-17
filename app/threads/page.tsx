@@ -148,13 +148,13 @@ export default async function ThreadsPage({ searchParams }: PageProps) {
                     href={`/threads/${thread.id}`}
                     className="card-interactive block px-4 py-4"
                   >
-                    <h3 className="font-semibold text-neutral-100">
+                    <h3 className="font-semibold text-[var(--foreground)]">
                       {thread.title}
                     </h3>
-                    <p className="mt-1 line-clamp-2 text-sm text-neutral-500">
+                    <p className="mt-1 line-clamp-2 text-sm text-[var(--muted)]">
                       {thread.body}
                     </p>
-                    <p className="mt-3 text-xs text-neutral-500">
+                    <p className="mt-3 text-xs text-[var(--muted)]">
                       作成: {thread.authorName}
                       {thread.categoryName && (
                         <span className="badge badge-muted ml-2">

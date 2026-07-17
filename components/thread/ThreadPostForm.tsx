@@ -74,7 +74,7 @@ export function ThreadPostForm({
     <form
       ref={formRef}
       action={formAction}
-      className={`flex flex-col gap-3 ${isInline ? "reddit-comment__compose rounded-md border border-zinc-700/70 bg-zinc-950/50 p-3" : ""}`}
+      className={`flex flex-col gap-3 ${isInline ? "reddit-comment__compose rounded-md border border-[var(--border)] bg-[var(--surface)] p-3" : ""}`}
     >
       <input type="hidden" name="threadId" value={threadId} />
       {isFixedReply && (
@@ -82,9 +82,9 @@ export function ThreadPostForm({
       )}
 
       {isFixedReply ? (
-        <div className="flex items-center justify-between gap-2 text-xs text-zinc-500">
+        <div className="flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
           <span>
-            <span className="font-semibold text-zinc-300">
+            <span className="font-semibold text-[var(--muted-foreground)]">
               {replyToName ?? "コメント"}
             </span>
             への返信
@@ -93,14 +93,14 @@ export function ThreadPostForm({
             <button
               type="button"
               onClick={onCancelReply}
-              className="font-semibold text-zinc-400 transition hover:text-zinc-200"
+              className="font-semibold text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
             >
               キャンセル
             </button>
           )}
         </div>
       ) : (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-[var(--muted)]">
           {isLoggedIn
             ? "このセッションにコメントを投稿できます。"
             : "ログイン不要。匿名（名無し）で投稿できます。"}
@@ -111,15 +111,15 @@ export function ThreadPostForm({
       <p
         className={`flex flex-wrap items-center gap-1.5 rounded-md border px-3 py-1.5 ${
           willPostAsAnonymous
-            ? "border-zinc-700 bg-zinc-900/60"
-            : "border-amber-500/30 bg-amber-500/5"
+            ? "border-[var(--border)] bg-[var(--surface-raised)]"
+            : "border-[var(--brand-amber)]/30 bg-[var(--brand-amber-soft)]"
         } ${isInline ? "text-xs" : "text-sm"}`}
       >
-        <span className="text-zinc-400">
+        <span className="text-[var(--muted-foreground)]">
           {willPostAsAnonymous ? "匿名で投稿します:" : "投稿者名として投稿します:"}
         </span>
         <span
-          className={`font-semibold ${willPostAsAnonymous ? "text-zinc-200" : "text-amber-300"}`}
+          className={`font-semibold ${willPostAsAnonymous ? "text-[var(--foreground)]" : "text-[var(--brand-amber)]"}`}
         >
           {currentPostingName}
         </span>
@@ -127,14 +127,14 @@ export function ThreadPostForm({
 
       {isLoggedIn && (
         <label
-          className={`flex items-center gap-2 text-zinc-300 ${isInline ? "text-xs" : "text-sm"}`}
+          className={`flex items-center gap-2 text-[var(--muted-foreground)] ${isInline ? "text-xs" : "text-sm"}`}
         >
           <input
             type="checkbox"
             name="postAnonymously"
             checked={postAnonymously}
             onChange={(event) => setPostAnonymously(event.target.checked)}
-            className="accent-amber-500"
+            className="accent-[var(--brand-amber)]"
           />
           匿名（名無し）で投稿する
         </label>
@@ -142,7 +142,7 @@ export function ThreadPostForm({
 
       {showAnonymousFields && (
         <label className={`flex flex-col gap-1 ${isInline ? "text-xs" : "text-sm"}`}>
-          <span className="text-zinc-400">匿名の表示名（任意）</span>
+          <span className="text-[var(--muted-foreground)]">匿名の表示名（任意）</span>
           <input
             type="text"
             name="anonymousName"
@@ -150,7 +150,7 @@ export function ThreadPostForm({
             placeholder="空欄で名無し"
             value={anonymousNameInput}
             onChange={(event) => setAnonymousNameInput(event.target.value)}
-            className={`rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100 focus:border-amber-500/50 focus:outline-none ${
+            className={`input-field ${
               isInline
                 ? "px-3 py-1.5 text-sm"
                 : "max-w-xs px-3 py-2"
@@ -160,7 +160,7 @@ export function ThreadPostForm({
       )}
 
       <label className={`flex flex-col gap-1 ${isInline ? "text-xs" : "text-sm"}`}>
-        {!isInline && <span className="text-zinc-400">コメント</span>}
+        {!isInline && <span className="text-[var(--muted-foreground)]">コメント</span>}
         <textarea
           name="body"
           required
@@ -171,30 +171,34 @@ export function ThreadPostForm({
               ? "返信を書いてください"
               : "意見や質問を書いてください"
           }
-          className="resize-y rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 focus:border-amber-500/50 focus:outline-none"
+          className="input-field resize-y"
         />
       </label>
 
       {state.error && (
-        <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+        <p className="alert alert-error text-sm">
           {state.error}
         </p>
       )}
       {state.success && (
-        <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+        <p className="alert alert-success text-sm">
           {state.success}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className={`self-start rounded-md bg-amber-500 font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-60 ${
-          isInline ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"
-        }`}
-      >
-        {pending ? "投稿中…" : isFixedReply ? "返信を投稿" : "投稿する"}
-      </button>
+      {isInline ? (
+        <button
+          type="submit"
+          disabled={pending}
+          className="self-start rounded-md bg-[var(--brand-amber)] px-3 py-1.5 text-xs font-semibold text-[#1a1200] transition hover:opacity-90 disabled:opacity-60"
+        >
+          {pending ? "投稿中…" : isFixedReply ? "返信を投稿" : "投稿する"}
+        </button>
+      ) : (
+        <button type="submit" disabled={pending} className="btn-primary self-start">
+          {pending ? "投稿中…" : isFixedReply ? "返信を投稿" : "投稿する"}
+        </button>
+      )}
     </form>
   );
 }

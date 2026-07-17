@@ -1,7 +1,19 @@
 import Link from "next/link";
 import { SearchForm } from "@/components/search/SearchForm";
 import { SearchResults } from "@/components/search/SearchResults";
-import { searchCatalog, siteSearchTotal } from "@/lib/data/search";
+import { SearchTypeTabs } from "@/components/search/SearchTypeTabs";
+import {
+  searchCatalog,
+  searchCatalogByType,
+  siteSearchTotal,
+  type SiteSearchResult,
+} from "@/lib/data/search";
+import {
+  parseSearchType,
+  SEARCH_SECTION_LIMIT,
+  SEARCH_TYPE_LIMIT,
+  type SingleSearchType,
+} from "@/lib/search/search-type";
 import { pageTitle } from "@/lib/site";
 
 export const metadata = {
@@ -11,14 +23,42 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 type SearchPageProps = {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; type?: string }>;
 };
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { q } = await searchParams;
+  const { q, type: typeParam } = await searchParams;
   const query = q?.trim() ?? "";
-  const results = query ? await searchCatalog(query, 12) : null;
+  const type = parseSearchType(typeParam);
+
+  let results: SiteSearchResult | null = null;
+  if (query) {
+    results =
+      type === "all"
+        ? await searchCatalog(query, SEARCH_SECTION_LIMIT)
+        : await searchCatalogByType(query, type, SEARCH_TYPE_LIMIT);
+  }
+
   const total = results ? siteSearchTotal(results) : 0;
+
+  // タブのバッジ用件数。「すべて」ビューでは全タイプ、単一タイプビューでは
+  // その 1 タイプのみ件数が分かる（取得できた範囲で表示する）。
+  let counts: Partial<Record<SingleSearchType, number>> | undefined;
+  if (results) {
+    if (type === "all") {
+      counts = {
+        albums: results.albums.length,
+        artists: results.artists.length,
+        threads: results.threads.length,
+        posts: results.posts.length,
+        reviews: results.reviews.length,
+      };
+    } else {
+      const single: Partial<Record<SingleSearchType, number>> = {};
+      single[type] = results[type].length;
+      counts = single;
+    }
+  }
 
   return (
     <div className="page-shell">
@@ -30,6 +70,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       </header>
 
       <SearchForm initialQuery={query} />
+
+      {query && (
+        <SearchTypeTabs query={query} activeType={type} counts={counts} />
+      )}
 
       {!query ? (
         <p className="text-sm text-neutral-500">
@@ -48,7 +92,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           </p>
         </div>
       ) : (
-        <SearchResults query={query} results={results!} />
+        <SearchResults
+          query={query}
+          results={results!}
+          moreLinkLimit={type === "all" ? SEARCH_SECTION_LIMIT : undefined}
+        />
       )}
     </div>
   );

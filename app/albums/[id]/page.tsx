@@ -8,6 +8,8 @@ import { TrackRatingList } from "@/components/review/TrackRatingList";
 import { ArtistLink } from "@/components/artist/ArtistLink";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { ReviewSortTabs } from "@/components/review/ReviewSortTabs";
+import { ReviewsPagination } from "@/components/review/ReviewsPagination";
+import { ShareButton } from "@/components/ui/ShareButton";
 import { StarRating } from "@/components/ui/StarRating";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { getUser } from "@/lib/auth/session";
@@ -17,9 +19,13 @@ import { albumCoverSrc } from "@/lib/covers";
 import { getArtistById } from "@/lib/data/artists";
 import { getReviewReactionStates } from "@/lib/data/reactions";
 import { getReviewCommentsForReviews } from "@/lib/data/review-comments";
-import { getReviewsByAlbumId, getUserReviewForAlbum } from "@/lib/data/reviews";
+import {
+  getReviewCountByAlbumId,
+  getReviewsByAlbumId,
+  getUserReviewForAlbum,
+} from "@/lib/data/reviews";
 import { getOwnListsForAlbum } from "@/lib/data/lists";
-import { parseReviewSort } from "@/lib/reviews/review-sort";
+import { parseReviewPage, parseReviewSort } from "@/lib/reviews/review-sort";
 import {
   getTrackRatingAveragesForAlbum,
   getUserTrackRatingsForAlbum,
@@ -29,7 +35,11 @@ import { pageTitle, siteUrl } from "@/lib/site";
 
 type PageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string; reviewSort?: string }>;
+  searchParams: Promise<{
+    from?: string;
+    reviewSort?: string;
+    reviewPage?: string;
+  }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -123,7 +133,11 @@ export default async function AlbumDetailPage({
   searchParams,
 }: PageProps) {
   const { id } = await params;
-  const { from, reviewSort: reviewSortParam } = await searchParams;
+  const {
+    from,
+    reviewSort: reviewSortParam,
+    reviewPage: reviewPageParam,
+  } = await searchParams;
   const album = await getAlbumById(id);
 
   if (!album) {
@@ -131,6 +145,7 @@ export default async function AlbumDetailPage({
   }
 
   const reviewSort = parseReviewSort(reviewSortParam);
+  const reviewPage = parseReviewPage(reviewPageParam);
   const user = await getUser();
   const artist = await getArtistById(album.artistId);
   const artistName = artist?.name ?? "";
@@ -141,13 +156,15 @@ export default async function AlbumDetailPage({
 
   const [
     reviews,
+    reviewCount,
     userReview,
     userTrackRatings,
     trackAverages,
     isAdmin,
     ownLists,
   ] = await Promise.all([
-    getReviewsByAlbumId(id, reviewSort),
+    getReviewsByAlbumId(id, reviewSort, reviewPage),
+    getReviewCountByAlbumId(id),
     user ? getUserReviewForAlbum(user.id, id) : Promise.resolve(null),
     user ? getUserTrackRatingsForAlbum(user.id, id) : Promise.resolve(new Map()),
     getTrackRatingAveragesForAlbum(id),
@@ -297,6 +314,13 @@ export default async function AlbumDetailPage({
             </a>
           )}
 
+          <div className="mt-2">
+            <ShareButton
+              url={`/albums/${album.id}`}
+              title={`${album.title} - ${artistName}`}
+            />
+          </div>
+
           <div className="mt-4">
             <AddToListDropdown
               albumId={album.id}
@@ -342,26 +366,45 @@ export default async function AlbumDetailPage({
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-[var(--foreground)]">
             みんなのレビュー
+            {reviewCount > 0 && (
+              <span className="ml-2 text-sm font-normal text-[var(--muted)]">
+                （全{reviewCount.toLocaleString("ja-JP")}件）
+              </span>
+            )}
           </h2>
-          {reviews.length > 0 && (
+          {reviewCount > 0 && (
             <ReviewSortTabs albumId={album.id} sort={reviewSort} />
           )}
         </div>
-        {reviews.length > 0 ? (
-          <div className="flex flex-col gap-4">
-            {reviews.map((review) => (
-              <div key={review.id} id={`review-${review.id}`}>
-                <ReviewCard
-                  review={review}
-                  showAlbumTitle={false}
-                  reactionState={reactionMap.get(review.id)}
-                  comments={commentsByReview.get(review.id) ?? []}
-                  currentUserId={user?.id ?? null}
-                  isAdmin={isAdmin}
-                />
+        {reviewCount > 0 ? (
+          reviews.length > 0 ? (
+            <>
+              <div className="flex flex-col gap-4">
+                {reviews.map((review) => (
+                  <div key={review.id} id={`review-${review.id}`}>
+                    <ReviewCard
+                      review={review}
+                      showAlbumTitle={false}
+                      reactionState={reactionMap.get(review.id)}
+                      comments={commentsByReview.get(review.id) ?? []}
+                      currentUserId={user?.id ?? null}
+                      isAdmin={isAdmin}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              <ReviewsPagination
+                albumId={album.id}
+                currentPage={reviewPage}
+                totalCount={reviewCount}
+                sort={reviewSort}
+              />
+            </>
+          ) : (
+            <p className="text-sm text-[var(--muted)]">
+              このページに表示できるレビューはありません。
+            </p>
+          )
         ) : (
           <p className="text-sm text-[var(--muted)]">まだレビューはありません。</p>
         )}

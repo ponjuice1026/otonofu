@@ -60,12 +60,12 @@ export function ThreadHomeCard({
       <p className="thread-home-card__body">{thread.body}</p>
 
       <p className="thread-home-card__meta">
-        <span className="text-neutral-400">{thread.authorName}</span>
+        <span className="text-[var(--muted-foreground)]">{thread.authorName}</span>
         <span className="num-stat">
           返信 {thread.postCount} · 閲覧{" "}
           {thread.viewCount.toLocaleString("ja-JP")}
         </span>
-        <span className="text-neutral-600">
+        <span className="text-[var(--muted)]">
           {variant === "newest"
             ? `作成 ${formatThreadDate(thread.createdAt)}`
             : formatThreadDate(thread.updatedAt)}

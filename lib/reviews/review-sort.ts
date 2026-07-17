@@ -57,14 +57,26 @@ export function sortReviews(
   return sorted;
 }
 
+/** レビューページ番号を 1 以上の整数に正規化する（不正値は 1）。 */
+export function parseReviewPage(value: string | undefined): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) return 1;
+  return Math.floor(parsed);
+}
+
 export function reviewsPageHref(
   basePath: string,
-  params: { reviewSort?: ReviewSort; hash?: string },
+  params: { reviewSort?: ReviewSort; reviewPage?: number; hash?: string },
 ): string {
   const search = new URLSearchParams();
 
   if (params.reviewSort && params.reviewSort !== "newest") {
     search.set("reviewSort", params.reviewSort);
+  }
+
+  // 1 ページ目は省略して URL をきれいに保つ。
+  if (params.reviewPage && params.reviewPage > 1) {
+    search.set("reviewPage", String(params.reviewPage));
   }
 
   const query = search.toString();

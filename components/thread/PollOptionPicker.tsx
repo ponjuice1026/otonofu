@@ -114,14 +114,14 @@ export function PollOptionPicker({
         : [];
 
   return (
-    <div className="rounded-md border border-zinc-700 bg-zinc-900/60 p-3">
+    <div className="rounded-md border border-[var(--border-strong)] bg-[var(--surface-raised)] p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-xs font-medium text-zinc-400">選択肢 {index + 1}</p>
+        <p className="text-xs font-medium text-[var(--muted-foreground)]">選択肢 {index + 1}</p>
         <button
           type="button"
           onClick={onRemove}
           disabled={!removable}
-          className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400 transition hover:border-zinc-500 disabled:opacity-40"
+          className="rounded border border-[var(--border-strong)] px-2 py-0.5 text-xs text-[var(--muted-foreground)] transition hover:border-[var(--border-strong)] disabled:opacity-40"
         >
           削除
         </button>
@@ -135,8 +135,8 @@ export function PollOptionPicker({
             onClick={() => setType(value)}
             className={`rounded-md border px-2.5 py-1 text-xs transition ${
               option.type === value
-                ? "border-amber-500/60 bg-amber-500/10 text-amber-300"
-                : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                ? "border-[var(--brand-amber)]/60 bg-[var(--brand-amber-soft)] text-[var(--brand-amber)]"
+                : "border-[var(--border-strong)] text-[var(--muted-foreground)] hover:border-[var(--border-strong)]"
             }`}
           >
             {value === "text" && "テキスト"}
@@ -153,7 +153,7 @@ export function PollOptionPicker({
           onChange={(e) => onChange({ type: "text", label: e.target.value })}
           maxLength={80}
           placeholder="例: 1st アルバム"
-          className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none"
+          className="input-field text-sm"
         />
       )}
 
@@ -181,21 +181,21 @@ export function PollOptionPicker({
                 ? "アルバム名で検索"
                 : "アーティスト名で検索"
             }
-            className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none"
+            className="input-field text-sm"
           />
 
           {loading && (
-            <p className="px-1 text-xs text-zinc-500">検索中…</p>
+            <p className="px-1 text-xs text-[var(--muted)]">検索中…</p>
           )}
 
           {!loading && query.trim().length > 0 && visibleHits.length === 0 && (
-            <p className="px-1 text-xs text-zinc-500">
+            <p className="px-1 text-xs text-[var(--muted)]">
               候補が見つかりませんでした
             </p>
           )}
 
           {visibleHits.length > 0 && (
-            <ul className="max-h-56 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950">
+            <ul className="max-h-56 overflow-y-auto rounded-md border border-[var(--border)] bg-[var(--surface)]">
               {option.type === "album" &&
                 (visibleHits as SearchAlbumHit[]).map((hit) => (
                   <li key={hit.id}>
@@ -211,14 +211,14 @@ export function PollOptionPicker({
                           artistName: hit.artistName,
                         })
                       }
-                      className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-zinc-900"
+                      className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-[var(--surface-hover)]"
                     >
                       <CoverBox src={coverSrc(hit)} rounded="rounded" />
                       <div className="min-w-0">
-                        <p className="truncate text-sm text-zinc-100">
+                        <p className="truncate text-sm text-[var(--foreground)]">
                           {hit.title}
                         </p>
-                        <p className="truncate text-xs text-zinc-500">
+                        <p className="truncate text-xs text-[var(--muted)]">
                           {hit.artistName} · {hit.year}
                         </p>
                       </div>
@@ -239,15 +239,15 @@ export function PollOptionPicker({
                           spotifyId: hit.spotifyId,
                         })
                       }
-                      className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-zinc-900"
+                      className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-[var(--surface-hover)]"
                     >
                       <CoverBox src={artistSrc(hit)} rounded="rounded-full" />
                       <div className="min-w-0">
-                        <p className="truncate text-sm text-zinc-100">
+                        <p className="truncate text-sm text-[var(--foreground)]">
                           {hit.name}
                         </p>
                         {hit.nameEn && (
-                          <p className="truncate text-xs text-zinc-500">
+                          <p className="truncate text-xs text-[var(--muted)]">
                             {hit.nameEn}
                           </p>
                         )}
@@ -272,16 +272,16 @@ function SelectedItem({
 }) {
   if (option.type === "album") {
     return (
-      <div className="flex items-center gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+      <div className="flex items-center gap-3 rounded-md border border-[var(--brand-amber)]/30 bg-[var(--brand-amber-soft)] px-3 py-2">
         <CoverBox src={coverSrc(option)} rounded="rounded" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm text-zinc-100">{option.label}</p>
-          <p className="text-xs text-amber-400/80">アルバム</p>
+          <p className="truncate text-sm text-[var(--foreground)]">{option.label}</p>
+          <p className="text-xs text-[var(--brand-amber)]">アルバム</p>
         </div>
         <button
           type="button"
           onClick={onClear}
-          className="shrink-0 rounded border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:border-zinc-500"
+          className="shrink-0 rounded border border-[var(--border-strong)] px-2 py-1 text-xs text-[var(--muted-foreground)] hover:border-[var(--border-strong)]"
         >
           変更
         </button>
@@ -290,16 +290,16 @@ function SelectedItem({
   }
   if (option.type === "artist") {
     return (
-      <div className="flex items-center gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+      <div className="flex items-center gap-3 rounded-md border border-[var(--brand-amber)]/30 bg-[var(--brand-amber-soft)] px-3 py-2">
         <CoverBox src={artistSrc(option)} rounded="rounded-full" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm text-zinc-100">{option.label}</p>
-          <p className="text-xs text-amber-400/80">アーティスト</p>
+          <p className="truncate text-sm text-[var(--foreground)]">{option.label}</p>
+          <p className="text-xs text-[var(--brand-amber)]">アーティスト</p>
         </div>
         <button
           type="button"
           onClick={onClear}
-          className="shrink-0 rounded border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:border-zinc-500"
+          className="shrink-0 rounded border border-[var(--border-strong)] px-2 py-1 text-xs text-[var(--muted-foreground)] hover:border-[var(--border-strong)]"
         >
           変更
         </button>
@@ -318,7 +318,7 @@ function CoverBox({
 }) {
   return (
     <div
-      className={`relative h-10 w-10 shrink-0 overflow-hidden bg-zinc-800 ${rounded}`}
+      className={`relative h-10 w-10 shrink-0 overflow-hidden bg-[var(--surface-hover)] ${rounded}`}
     >
       {src ? (
         <Image src={src} alt="" fill className="object-cover" sizes="40px" />

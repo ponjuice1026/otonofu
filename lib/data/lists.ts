@@ -163,7 +163,12 @@ async function assembleListSummaries(
 
 const LIST_PAGE_SIZE = 50;
 
-/** 公開リスト一覧（新着順） */
+export const PUBLIC_LISTS_PAGE_SIZE = 24;
+
+/**
+ * 公開リスト一覧（新着順・件数指定での一括取得）。
+ * サイトマップ等、ページングせず上位N件をまとめて欲しい呼び出し向け。
+ */
 export async function getPublicLists(
   limit = LIST_PAGE_SIZE,
 ): Promise<UserList[]> {
@@ -187,6 +192,61 @@ export async function getPublicLists(
   } catch (err) {
     console.error("[Supabase] getPublicLists:", err);
     return [];
+  }
+}
+
+/** 公開リスト一覧（ページング対応・新着順） */
+export async function getPublicListsPage(
+  page: number,
+  pageSize = PUBLIC_LISTS_PAGE_SIZE,
+): Promise<UserList[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const safePage = Math.max(1, page);
+  const from = (safePage - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("user_lists")
+      .select("*")
+      .eq("is_public", true)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (error || !data) {
+      console.error("[Supabase] getPublicListsPage:", error?.message);
+      return [];
+    }
+
+    return assembleListSummaries(data as DbUserList[]);
+  } catch (err) {
+    console.error("[Supabase] getPublicListsPage:", err);
+    return [];
+  }
+}
+
+/** 公開リストの総件数 */
+export async function getPublicListsCount(): Promise<number> {
+  if (!isSupabaseConfigured()) return 0;
+
+  try {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+      .from("user_lists")
+      .select("*", { count: "exact", head: true })
+      .eq("is_public", true);
+
+    if (error) {
+      console.error("[Supabase] getPublicListsCount:", error.message);
+      return 0;
+    }
+
+    return count ?? 0;
+  } catch (err) {
+    console.error("[Supabase] getPublicListsCount:", err);
+    return 0;
   }
 }
 

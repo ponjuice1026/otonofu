@@ -58,12 +58,12 @@ export function ThreadPollAddOption({
   }
 
   return (
-    <div className="mt-5 border-t border-zinc-800 pt-5">
+    <div className="mt-5 border-t border-[var(--border)] pt-5">
       {!open ? (
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-sm font-medium text-amber-400 transition hover:text-amber-300"
+          className="link-accent text-sm font-medium hover:underline"
         >
           ＋ 選択肢を追加（セッション参加者のみ）
         </button>
@@ -73,8 +73,8 @@ export function ThreadPollAddOption({
           <input type="hidden" name="pollOptionsJson" value={serialized} />
 
           <div>
-            <p className="text-sm font-medium text-zinc-200">選択肢を追加</p>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="text-sm font-medium text-[var(--foreground)]">選択肢を追加</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">
               このセッションに返信した参加者だけが追加できます（作成者は不可）。
               残り {maxOptions - optionCount} 件まで追加可能です。
             </p>
@@ -89,23 +89,19 @@ export function ThreadPollAddOption({
           />
 
           {state.error && (
-            <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+            <p className="alert alert-error text-sm">
               {state.error}
             </p>
           )}
 
           <div className="flex flex-wrap gap-2">
-            <button
-              type="submit"
-              disabled={pending}
-              className="rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-60"
-            >
+            <button type="submit" disabled={pending} className="btn-primary">
               {pending ? "追加中…" : "選択肢を追加する"}
             </button>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-md border border-zinc-600 px-4 py-2 text-sm text-zinc-300 transition hover:border-zinc-500"
+              className="btn-secondary"
             >
               キャンセル
             </button>

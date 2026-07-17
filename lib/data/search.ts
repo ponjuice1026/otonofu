@@ -10,6 +10,7 @@ import {
   buildIlikeOrFilter,
   escapeLikePattern,
 } from "@/lib/search/postgrest-filter";
+import type { SingleSearchType } from "@/lib/search/search-type";
 import type { DbReview } from "@/lib/supabase/types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -398,6 +399,109 @@ async function searchAlbumsByTitle(
   return (albumRows as DbAlbumSearchRow[] | null) ?? [];
 }
 
+/**
+ * アルバム検索。タイトル一致（RPC）＋ マッチ済みアーティストのアルバムを
+ * 結合し、正規化マッチで絞り込んでスコア順に並べる。
+ * matchedArtists は名前解決とアーティスト経由のアルバム収集の起点に使う。
+ */
+async function searchAlbums(
+  supabase: SupabaseServerClient,
+  trimmed: string,
+  matchedArtists: SearchArtistHit[],
+  safeLimit: number,
+): Promise<SearchAlbumHit[]> {
+  const matchedArtistIds = matchedArtists.map((artist) => artist.id);
+
+  const [albumsByTitle, { data: albumsByArtist }] = await Promise.all([
+    searchAlbumsByTitle(supabase, trimmed, safeLimit),
+    matchedArtistIds.length > 0
+      ? supabase
+          .from("albums")
+          .select(ALBUM_SEARCH_COLUMNS)
+          .in("artist_id", matchedArtistIds)
+          .order("year", { ascending: false })
+          .limit(safeLimit * 2)
+      : Promise.resolve({ data: [] as DbAlbumSearchRow[] }),
+  ]);
+
+  const albumMap = new Map<string, DbAlbumSearchRow>();
+  for (const row of [
+    ...albumsByTitle,
+    ...(albumsByArtist as DbAlbumSearchRow[] | null ?? []),
+  ]) {
+    albumMap.set(row.id, row);
+  }
+
+  const albumRows = [...albumMap.values()];
+
+  // アルバム表示用のアーティスト名解決（マッチ済みアーティストを起点に）
+  const artistNameById = new Map<string, DbArtistSearchRow>(
+    matchedArtists.map((artist) => [
+      artist.id,
+      {
+        id: artist.id,
+        name: artist.name,
+        name_en: artist.nameEn ?? null,
+        spotify_id: artist.spotifyId ?? null,
+        image_url: artist.imageUrl ?? null,
+      } satisfies DbArtistSearchRow,
+    ]),
+  );
+
+  const missingArtistIds = [
+    ...new Set(
+      albumRows
+        .map((row) => row.artist_id)
+        .filter((artistId) => !artistNameById.has(artistId)),
+    ),
+  ];
+
+  if (missingArtistIds.length > 0) {
+    const { data: extraArtists } = await supabase
+      .from("artists")
+      .select("id, name, name_en")
+      .in("id", missingArtistIds);
+
+    for (const row of extraArtists ?? []) {
+      artistNameById.set(row.id, row as DbArtistSearchRow);
+    }
+  }
+
+  return albumRows
+    .map((row): SearchAlbumHit => {
+      const artist = artistNameById.get(row.artist_id);
+      return {
+        type: "album",
+        id: row.id,
+        title: row.title,
+        artistId: row.artist_id,
+        artistName: artist?.name ?? "",
+        artistNameEn: artist?.name_en ?? undefined,
+        year: row.year,
+        coverUrl: row.cover_url ?? undefined,
+        spotifyId: row.spotify_id ?? undefined,
+      };
+    })
+    .filter(
+      (album) =>
+        matchesSearchQuery(trimmed, album.title) ||
+        matchesSearchQuery(trimmed, album.artistName, album.artistNameEn),
+    )
+    .sort((a, b) => {
+      const titleScore =
+        searchMatchScore(trimmed, b.title) - searchMatchScore(trimmed, a.title);
+      if (titleScore !== 0) return titleScore;
+
+      const artistScore =
+        searchMatchScore(trimmed, b.artistName, b.artistNameEn) -
+        searchMatchScore(trimmed, a.artistName, a.artistNameEn);
+      if (artistScore !== 0) return artistScore;
+
+      return b.year - a.year;
+    })
+    .slice(0, safeLimit);
+}
+
 export async function searchCatalog(
   query: string,
   limit = 8,
@@ -418,100 +522,9 @@ export async function searchCatalog(
 
     // アーティスト: 正規化列 + trigram の RPC（similarity 降順）
     const matchedArtists = await searchArtists(supabase, trimmed, safeLimit);
-    const matchedArtistIds = matchedArtists.map((artist) => artist.id);
 
-    // アルバム: タイトル一致（RPC）＋ マッチしたアーティストのアルバム
-    const [albumsByTitle, { data: albumsByArtist }] = await Promise.all([
-      searchAlbumsByTitle(supabase, trimmed, safeLimit),
-      matchedArtistIds.length > 0
-        ? supabase
-            .from("albums")
-            .select(ALBUM_SEARCH_COLUMNS)
-            .in("artist_id", matchedArtistIds)
-            .order("year", { ascending: false })
-            .limit(safeLimit * 2)
-        : Promise.resolve({ data: [] as DbAlbumSearchRow[] }),
-    ]);
-
-    const albumMap = new Map<string, DbAlbumSearchRow>();
-    for (const row of [
-      ...albumsByTitle,
-      ...(albumsByArtist as DbAlbumSearchRow[] | null ?? []),
-    ]) {
-      albumMap.set(row.id, row);
-    }
-
-    const albumRows = [...albumMap.values()];
-
-    // アルバム表示用のアーティスト名解決（マッチ済みアーティストを起点に）
-    const artistNameById = new Map<string, DbArtistSearchRow>(
-      matchedArtists.map((artist) => [
-        artist.id,
-        {
-          id: artist.id,
-          name: artist.name,
-          name_en: artist.nameEn ?? null,
-          spotify_id: artist.spotifyId ?? null,
-          image_url: artist.imageUrl ?? null,
-        } satisfies DbArtistSearchRow,
-      ]),
-    );
-
-    const missingArtistIds = [
-      ...new Set(
-        albumRows
-          .map((row) => row.artist_id)
-          .filter((artistId) => !artistNameById.has(artistId)),
-      ),
-    ];
-
-    if (missingArtistIds.length > 0) {
-      const { data: extraArtists } = await supabase
-        .from("artists")
-        .select("id, name, name_en")
-        .in("id", missingArtistIds);
-
-      for (const row of extraArtists ?? []) {
-        artistNameById.set(row.id, row as DbArtistSearchRow);
-      }
-    }
-
-    const albums = albumRows
-      .map((row): SearchAlbumHit => {
-        const artist = artistNameById.get(row.artist_id);
-        return {
-          type: "album",
-          id: row.id,
-          title: row.title,
-          artistId: row.artist_id,
-          artistName: artist?.name ?? "",
-          artistNameEn: artist?.name_en ?? undefined,
-          year: row.year,
-          coverUrl: row.cover_url ?? undefined,
-          spotifyId: row.spotify_id ?? undefined,
-        };
-      })
-      .filter(
-        (album) =>
-          matchesSearchQuery(trimmed, album.title) ||
-          matchesSearchQuery(trimmed, album.artistName, album.artistNameEn),
-      )
-      .sort((a, b) => {
-        const titleScore =
-          searchMatchScore(trimmed, b.title) -
-          searchMatchScore(trimmed, a.title);
-        if (titleScore !== 0) return titleScore;
-
-        const artistScore =
-          searchMatchScore(trimmed, b.artistName, b.artistNameEn) -
-          searchMatchScore(trimmed, a.artistName, a.artistNameEn);
-        if (artistScore !== 0) return artistScore;
-
-        return b.year - a.year;
-      })
-      .slice(0, safeLimit);
-
-    const [threads, reviews, posts] = await Promise.all([
+    const [albums, threads, reviews, posts] = await Promise.all([
+      searchAlbums(supabase, trimmed, matchedArtists, safeLimit),
       searchThreads(trimmed, safeLimit),
       searchReviews(trimmed, safeLimit),
       searchDiscussionPosts(trimmed, safeLimit),
@@ -521,6 +534,71 @@ export async function searchCatalog(
   } catch (err) {
     console.error("[Supabase] searchCatalog:", err);
     return { artists: [], albums: [], threads: [], reviews: [], posts: [] };
+  }
+}
+
+/**
+ * 単一タイプの深掘り検索。指定タイプのみを多めの limit で取得し、
+ * 他タイプは空配列のまま返す（SiteSearchResult 形状を維持）。
+ * サニタイズ・正規化は横断検索と同じヘルパーを再利用する。
+ */
+export async function searchCatalogByType(
+  query: string,
+  type: SingleSearchType,
+  limit: number,
+): Promise<SiteSearchResult> {
+  const empty: SiteSearchResult = {
+    artists: [],
+    albums: [],
+    threads: [],
+    reviews: [],
+    posts: [],
+  };
+
+  if (!isSupabaseConfigured()) return empty;
+
+  const trimmed = query.trim();
+  if (trimmed.length < 1) return empty;
+
+  const safeLimit = Math.min(60, Math.max(1, limit));
+
+  try {
+    const supabase = await createClient();
+
+    switch (type) {
+      case "artists":
+        return {
+          ...empty,
+          artists: await searchArtists(supabase, trimmed, safeLimit),
+        };
+      case "albums": {
+        // アルバムはアーティスト経由の収集・名前解決のため先にアーティスト検索。
+        const matchedArtists = await searchArtists(supabase, trimmed, safeLimit);
+        return {
+          ...empty,
+          albums: await searchAlbums(
+            supabase,
+            trimmed,
+            matchedArtists,
+            safeLimit,
+          ),
+        };
+      }
+      case "threads":
+        return { ...empty, threads: await searchThreads(trimmed, safeLimit) };
+      case "reviews":
+        return { ...empty, reviews: await searchReviews(trimmed, safeLimit) };
+      case "posts":
+        return {
+          ...empty,
+          posts: await searchDiscussionPosts(trimmed, safeLimit),
+        };
+      default:
+        return empty;
+    }
+  } catch (err) {
+    console.error("[Supabase] searchCatalogByType:", err);
+    return empty;
   }
 }
 

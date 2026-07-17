@@ -24,12 +24,12 @@ export function PollResults({ poll, preview = false }: PollResultsProps) {
   return (
     <div>
       {!preview && viewedOnly && (
-        <p className="mb-3 text-xs text-zinc-500">
+        <p className="mb-3 text-xs text-[var(--muted)]">
           得票率は集計対象の選択肢のみ表示しています。
         </p>
       )}
       {preview && (
-        <p className="mb-3 text-xs text-zinc-500">結果表示のサンプル</p>
+        <p className="mb-3 text-xs text-[var(--muted)]">結果表示のサンプル</p>
       )}
 
       <ul className="flex flex-col gap-3">
@@ -41,14 +41,14 @@ export function PollResults({ poll, preview = false }: PollResultsProps) {
           return (
             <li
               key={option.id}
-              className="rounded-md border border-zinc-800 bg-zinc-900/40 p-3"
+              className="rounded-md border border-[var(--border)] bg-[var(--surface-raised)] p-3"
             >
               <div className="mb-2 flex items-start gap-3">
                 <OptionMedia option={option} />
                 <div className="min-w-0 flex-1">
                   <OptionLabel option={option} highlight={isSelected} />
                   {isSelected && (
-                    <p className="mt-0.5 text-xs text-amber-400/90">
+                    <p className="mt-0.5 text-xs text-[var(--brand-amber)]">
                       あなたの投票
                     </p>
                   )}
@@ -56,20 +56,20 @@ export function PollResults({ poll, preview = false }: PollResultsProps) {
                 <div className="shrink-0 text-right">
                   <p
                     className={`text-lg font-bold tabular-nums ${
-                      isSelected ? "text-amber-300" : "text-zinc-100"
+                      isSelected ? "text-[var(--brand-amber)]" : "text-[var(--foreground)]"
                     }`}
                   >
                     {percent}%
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-[var(--muted)]">
                     {option.voteCount} 票
                   </p>
                 </div>
               </div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-zinc-800">
+              <div className="h-2.5 overflow-hidden rounded-full bg-[var(--surface-hover)]">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    isSelected ? "bg-amber-500" : "bg-zinc-600"
+                    isSelected ? "bg-[var(--brand-amber)]" : "bg-[var(--border-strong)]"
                   }`}
                   style={{ width: `${percent}%` }}
                   role="progressbar"
@@ -97,7 +97,7 @@ export function PollResults({ poll, preview = false }: PollResultsProps) {
               return (
                 <li
                   key={option.id}
-                  className="flex items-center gap-3 rounded-md border border-sky-500/20 bg-zinc-900/40 px-3 py-2"
+                  className="flex items-center gap-3 rounded-md border border-sky-500/20 bg-[var(--surface-raised)] px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
                     <OptionLabel option={option} highlight={isSelected} />
@@ -107,7 +107,7 @@ export function PollResults({ poll, preview = false }: PollResultsProps) {
                       </p>
                     )}
                   </div>
-                  <p className="shrink-0 text-xs text-zinc-500">集計外</p>
+                  <p className="shrink-0 text-xs text-[var(--muted)]">集計外</p>
                 </li>
               );
             })}
@@ -140,8 +140,8 @@ export function PollResultPreview({ rows }: PollResultPreviewProps) {
   };
 
   return (
-    <div className="mt-4 rounded-md border border-dashed border-zinc-700 bg-zinc-950/40 p-4">
-      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
+    <div className="mt-4 rounded-md border border-dashed border-[var(--border-strong)] bg-[var(--surface)] p-4">
+      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
         結果表示のプレビュー
       </p>
       <PollResults poll={poll} preview />
@@ -171,7 +171,7 @@ function OptionMedia({ option }: { option: DiscussionPollOption }) {
   if (option.type === "album" && option.album) {
     const src = albumCover(option.album);
     return (
-      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-zinc-800">
+      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-[var(--surface-hover)]">
         {src ? (
           <Image src={src} alt="" fill className="object-cover" sizes="40px" />
         ) : null}
@@ -181,7 +181,7 @@ function OptionMedia({ option }: { option: DiscussionPollOption }) {
   if (option.type === "artist" && option.artist) {
     const src = artistImage(option.artist);
     return (
-      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-zinc-800">
+      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[var(--surface-hover)]">
         {src ? (
           <Image src={src} alt="" fill className="object-cover" sizes="40px" />
         ) : null}
@@ -199,17 +199,17 @@ function OptionLabel({
   highlight?: boolean;
 }) {
   const titleClass = highlight
-    ? "font-medium text-amber-300"
-    : "text-zinc-200";
+    ? "font-medium text-[var(--brand-amber)]"
+    : "text-[var(--foreground)]";
 
   if (option.type === "album" && option.album) {
     return (
       <div className="min-w-0">
         <p className={`truncate text-sm ${titleClass}`}>{option.album.title}</p>
-        <p className="truncate text-xs text-zinc-500">
+        <p className="truncate text-xs text-[var(--muted)]">
           <Link
             href={`/albums/${option.album.id}`}
-            className="hover:text-amber-400"
+            className="hover:text-[var(--brand-amber)]"
             onClick={(e) => e.stopPropagation()}
           >
             {option.album.artistName}
@@ -225,7 +225,7 @@ function OptionLabel({
         <p className={`truncate text-sm ${titleClass}`}>{option.artist.name}</p>
         <Link
           href={`/artists/${option.artist.id}`}
-          className="text-xs text-zinc-500 hover:text-amber-400"
+          className="text-xs text-[var(--muted)] hover:text-[var(--brand-amber)]"
           onClick={(e) => e.stopPropagation()}
         >
           アーティストページへ →

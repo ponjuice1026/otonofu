@@ -286,43 +286,105 @@ export async function getTrendingReviews(limit = 6): Promise<Review[]> {
   return getTrendingReviewsCached(limit);
 }
 
+/** アルバム詳細「みんなのレビュー」の 1 ページあたり件数。 */
+export const REVIEWS_PAGE_SIZE = 10;
+
+/** ページ番号を 1 以上の整数に正規化する。 */
+function normalizeReviewPage(page: number): number {
+  if (!Number.isFinite(page) || page < 1) return 1;
+  return Math.floor(page);
+}
+
+/** アルバムに紐づく（ユーザー投稿の）レビュー総件数。ページャの分母に使う。 */
+export async function getReviewCountByAlbumId(albumId: string): Promise<number> {
+  if (!isSupabaseConfigured()) return 0;
+
+  try {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+      .from("reviews")
+      .select("*", { count: "exact", head: true })
+      .eq("album_id", albumId)
+      .not("user_id", "is", null);
+
+    if (error || count === null) {
+      if (error) console.error("[Supabase] getReviewCountByAlbumId:", error.message);
+      return 0;
+    }
+    return count;
+  } catch (err) {
+    console.error("[Supabase] getReviewCountByAlbumId:", err);
+    return 0;
+  }
+}
+
 export async function getReviewsByAlbumId(
   albumId: string,
   sort: ReviewSort = "newest",
+  page = 1,
+  pageSize: number = REVIEWS_PAGE_SIZE,
 ): Promise<Review[]> {
   if (!isSupabaseConfigured()) {
     return [];
   }
 
+  const safePage = normalizeReviewPage(page);
+  const from = (safePage - 1) * pageSize;
+  const to = from + pageSize - 1;
+
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+
+    // helpful: good リアクション数に依存するため DB 側で range できない。
+    // 全件取得 → リアクション数で並べ替え → 該当ページ分をスライスする。
+    if (sort === "helpful") {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("album_id", albumId)
+        .not("user_id", "is", null)
+        .order("created_at", { ascending: false });
+
+      if (error || !data) {
+        console.error("[Supabase] getReviewsByAlbumId:", error?.message);
+        return [];
+      }
+
+      const reviews = await attachThreadIds(mapReviews(data as DbReview[]));
+      if (reviews.length === 0) return [];
+
+      const reactionMap = await getReviewReactionStates(reviews.map((r) => r.id));
+      const goodCountByReviewId = new Map(
+        [...reactionMap.entries()].map(([id, state]) => [id, state.good]),
+      );
+      return sortReviews(reviews, sort, goodCountByReviewId).slice(
+        from,
+        from + pageSize,
+      );
+    }
+
+    // newest / rating は DB 側で並べ替え + range でページングできる。
+    let query = supabase
       .from("reviews")
       .select("*")
       .eq("album_id", albumId)
-      .not("user_id", "is", null)
-      .order("created_at", { ascending: false });
+      .not("user_id", "is", null);
+
+    query =
+      sort === "rating"
+        ? query
+            .order("rating", { ascending: false })
+            .order("created_at", { ascending: false })
+        : query.order("created_at", { ascending: false });
+
+    const { data, error } = await query.range(from, to);
 
     if (error || !data) {
       console.error("[Supabase] getReviewsByAlbumId:", error?.message);
       return [];
     }
 
-    const reviews = await attachThreadIds(mapReviews(data as DbReview[]));
-    if (sort === "newest" || reviews.length === 0) {
-      return reviews;
-    }
-
-    if (sort === "rating") {
-      return sortReviews(reviews, sort);
-    }
-
-    // helpful: good リアクション数が必要なので取得してから並べ替える
-    const reactionMap = await getReviewReactionStates(reviews.map((r) => r.id));
-    const goodCountByReviewId = new Map(
-      [...reactionMap.entries()].map(([id, state]) => [id, state.good]),
-    );
-    return sortReviews(reviews, sort, goodCountByReviewId);
+    return attachThreadIds(mapReviews(data as DbReview[]));
   } catch (err) {
     console.error("[Supabase] getReviewsByAlbumId:", err);
     return [];

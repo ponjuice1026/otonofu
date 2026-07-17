@@ -26,19 +26,17 @@ export default async function NotificationsPage() {
   const hasUnread = notifications.some((n) => n.readAt === null);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-neutral-100">通知</h1>
+    <div className="page-shell mx-auto max-w-3xl">
+      <header className="page-header flex items-center justify-between gap-3">
+        <h1 className="page-title">通知</h1>
         {hasUnread && <MarkAllReadButton />}
-      </div>
+      </header>
 
       {notifications.length === 0 ? (
-        <p className="rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-4 py-10 text-center text-sm text-neutral-400">
-          通知はまだありません。
-        </p>
+        <p className="empty-state">通知はまだありません。</p>
       ) : (
         <NotificationList notifications={notifications} />
       )}
-    </main>
+    </div>
   );
 }

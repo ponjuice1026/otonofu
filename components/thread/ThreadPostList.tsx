@@ -91,7 +91,7 @@ function RedditCommentItem({
       <div className="reddit-comment__header">
         <span className="reddit-comment__author">{node.anonymousName}</span>
         {node.threadLocalId && (
-          <span className="reddit-comment__local-id text-zinc-600">
+          <span className="reddit-comment__local-id text-[var(--muted)]">
             ID:{node.threadLocalId}
           </span>
         )}
@@ -105,7 +105,7 @@ function RedditCommentItem({
 
       <ExpandableText
         text={node.body}
-        className="reddit-comment__body text-sm leading-relaxed text-zinc-100"
+        className="reddit-comment__body text-sm leading-relaxed text-[var(--foreground)]"
       />
 
       <div className="reddit-comment__toolbar">
@@ -218,7 +218,7 @@ export function ThreadPostList({
 
   if (posts.length === 0) {
     return (
-      <p className="py-6 text-sm text-zinc-500">
+      <p className="py-6 text-sm text-[var(--muted)]">
         まだコメントはありません。最初の意見を書いてみてください。
       </p>
     );

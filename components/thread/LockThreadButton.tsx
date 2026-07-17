@@ -65,20 +65,20 @@ export function LockThreadButton({
   return (
     <div className="mt-3 flex flex-col items-end gap-1">
       {showReasonInput ? (
-        <div className="flex flex-col items-end gap-2 rounded-md border border-amber-500/30 bg-zinc-900/60 p-2">
+        <div className="flex flex-col items-end gap-2 rounded-md border border-[var(--brand-amber)]/30 bg-[var(--surface-raised)] p-2">
           <input
             type="text"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             maxLength={200}
             placeholder="凍結理由（任意）"
-            className="w-56 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 focus:border-amber-500/50 focus:outline-none"
+            className="input-field w-56 px-2 py-1 text-xs"
           />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setShowReasonInput(false)}
-              className="rounded-md border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-zinc-500"
+              className="rounded-md border border-[var(--border-strong)] px-2.5 py-1 text-xs text-[var(--muted-foreground)] transition hover:border-[var(--border-strong)]"
             >
               キャンセル
             </button>
@@ -86,7 +86,7 @@ export function LockThreadButton({
               type="button"
               onClick={handleLock}
               disabled={pending}
-              className="rounded-md border border-amber-500/40 px-2.5 py-1 text-xs text-amber-300 transition hover:border-amber-400 hover:text-amber-200 disabled:opacity-50"
+              className="rounded-md border border-[var(--brand-amber)]/40 px-2.5 py-1 text-xs text-[var(--brand-amber)] transition hover:border-[var(--brand-amber)] hover:text-[var(--brand-amber)] disabled:opacity-50"
             >
               {pending ? "凍結中…" : "凍結する"}
             </button>
@@ -97,7 +97,7 @@ export function LockThreadButton({
           type="button"
           onClick={() => setShowReasonInput(true)}
           disabled={pending}
-          className="rounded-md border border-amber-500/40 px-3 py-1 text-xs text-amber-300 transition hover:border-amber-400 hover:text-amber-200 disabled:opacity-50"
+          className="rounded-md border border-[var(--brand-amber)]/40 px-3 py-1 text-xs text-[var(--brand-amber)] transition hover:border-[var(--brand-amber)] hover:text-[var(--brand-amber)] disabled:opacity-50"
         >
           凍結する（管理者）
         </button>

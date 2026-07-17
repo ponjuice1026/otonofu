@@ -61,14 +61,14 @@ export function TrendingThreadList({
               {formatRankLabel(index + 1)}
             </span>
             <div className="min-w-0 flex-1">
-              <h3 className="line-clamp-1 font-semibold text-neutral-100">
+              <h3 className="line-clamp-1 font-semibold text-[var(--foreground)]">
                 {thread.title}
               </h3>
-              <p className="mt-1 line-clamp-1 text-sm text-neutral-500">
+              <p className="mt-1 line-clamp-1 text-sm text-[var(--muted)]">
                 {thread.body}
               </p>
-              <p className="mt-2 text-xs text-neutral-500">
-                <span className="text-neutral-400">{thread.authorName}</span>
+              <p className="mt-2 text-xs text-[var(--muted)]">
+                <span className="text-[var(--muted-foreground)]">{thread.authorName}</span>
                 {thread.hasPoll && (
                   <span className="badge ml-2">投票</span>
                 )}
@@ -76,7 +76,7 @@ export function TrendingThreadList({
                   返信 {thread.postCount} · 閲覧{" "}
                   {thread.viewCount.toLocaleString("ja-JP")}
                 </span>
-                <span className="ml-2 text-neutral-600">
+                <span className="ml-2 text-[var(--muted)]">
                   ·{" "}
                   {variant === "newest"
                     ? `作成 ${formatThreadDate(thread.createdAt)}`

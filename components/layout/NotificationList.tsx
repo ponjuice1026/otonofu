@@ -49,14 +49,14 @@ export function NotificationList({ notifications }: Props) {
                 <span
                   className={
                     unread
-                      ? "text-sm font-semibold text-neutral-100"
-                      : "text-sm text-neutral-300"
+                      ? "text-sm font-semibold text-[var(--foreground)]"
+                      : "text-sm text-[var(--muted-foreground)]"
                   }
                 >
                   {notificationMessage(notification.type, notification.actorName)}
                 </span>
               </span>
-              <span className="text-xs text-neutral-500">
+              <span className="text-xs text-[var(--muted)]">
                 {formatThreadDate(notification.createdAt)}
               </span>
             </button>

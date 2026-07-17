@@ -38,7 +38,7 @@ export function ThreadPostsPagination({
       className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm"
       aria-label="コメントのページネーション"
     >
-      <div className="text-zinc-500">
+      <div className="text-[var(--muted)]">
         {rootPostCount.toLocaleString("ja-JP")} 件のコメント
       </div>
       <div className="flex items-center gap-2">
@@ -49,7 +49,7 @@ export function ThreadPostsPagination({
         ) : (
           <span className="btn-ghost cursor-not-allowed opacity-40">← 前へ</span>
         )}
-        <span className="px-2 text-zinc-400">
+        <span className="px-2 text-[var(--muted-foreground)]">
           {currentPage} / {totalPages}
         </span>
         {nextPage ? (

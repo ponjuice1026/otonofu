@@ -3,11 +3,17 @@ import Link from "next/link";
 import { ArtistLink } from "@/components/artist/ArtistLink";
 import { AlbumCover } from "@/components/spotify/AlbumCover";
 import type { SiteSearchResult } from "@/lib/data/search";
+import { searchTypeHref, type SingleSearchType } from "@/lib/search/search-type";
 import { formatThreadDate } from "@/lib/threads/format";
 
 type SearchResultsProps = {
   query: string;
   results: SiteSearchResult;
+  /**
+   * 「すべて」ビューで各セクションが上限に達したとき「もっと見る」リンクを
+   * 出すための上限値。単一タイプ絞り込みビューでは省略する。
+   */
+  moreLinkLimit?: number;
 };
 
 function albumCoverSrcFromHit(coverUrl?: string, spotifyId?: string): string | undefined {
@@ -25,10 +31,14 @@ function artistImageSrc(imageUrl?: string, spotifyId?: string): string | undefin
 function Section({
   title,
   count,
+  moreHref,
+  moreLabel,
   children,
 }: {
   title: string;
   count: number;
+  moreHref?: string;
+  moreLabel?: string;
   children: React.ReactNode;
 }) {
   if (count === 0) return null;
@@ -40,11 +50,25 @@ function Section({
         <span className="ml-2 text-neutral-600">({count})</span>
       </h2>
       {children}
+      {moreHref && (
+        <div className="mt-3">
+          <Link
+            href={moreHref}
+            className="link-accent text-sm hover:underline"
+          >
+            {moreLabel} →
+          </Link>
+        </div>
+      )}
     </section>
   );
 }
 
-export function SearchResults({ query, results }: SearchResultsProps) {
+export function SearchResults({
+  query,
+  results,
+  moreLinkLimit,
+}: SearchResultsProps) {
   const {
     threads,
     posts,
@@ -53,13 +77,24 @@ export function SearchResults({ query, results }: SearchResultsProps) {
     albums,
   } = results;
 
+  // セクションが上限に達したときだけ、そのタイプの絞り込みへのリンクを出す。
+  const moreHrefFor = (type: SingleSearchType, count: number) =>
+    moreLinkLimit && count >= moreLinkLimit
+      ? searchTypeHref(query, type)
+      : undefined;
+
   return (
     <div>
       <p className="mb-6 text-sm text-neutral-500">
         「{query}」の検索結果
       </p>
 
-      <Section title="セッション" count={threads.length}>
+      <Section
+        title="セッション"
+        count={threads.length}
+        moreHref={moreHrefFor("threads", threads.length)}
+        moreLabel="セッションをもっと見る"
+      >
         <ul className="flex flex-col gap-2">
           {threads.map((thread) => (
             <li key={thread.id}>
@@ -80,7 +115,12 @@ export function SearchResults({ query, results }: SearchResultsProps) {
         </ul>
       </Section>
 
-      <Section title="コメント" count={posts.length}>
+      <Section
+        title="コメント"
+        count={posts.length}
+        moreHref={moreHrefFor("posts", posts.length)}
+        moreLabel="コメントをもっと見る"
+      >
         <ul className="flex flex-col gap-2">
           {posts.map((post) => (
             <li key={post.id}>
@@ -100,7 +140,12 @@ export function SearchResults({ query, results }: SearchResultsProps) {
         </ul>
       </Section>
 
-      <Section title="レビュー" count={reviews.length}>
+      <Section
+        title="レビュー"
+        count={reviews.length}
+        moreHref={moreHrefFor("reviews", reviews.length)}
+        moreLabel="レビューをもっと見る"
+      >
         <ul className="flex flex-col gap-2">
           {reviews.map((review) => (
             <li key={review.id}>
@@ -124,7 +169,12 @@ export function SearchResults({ query, results }: SearchResultsProps) {
         </ul>
       </Section>
 
-      <Section title="アーティスト" count={artists.length}>
+      <Section
+        title="アーティスト"
+        count={artists.length}
+        moreHref={moreHrefFor("artists", artists.length)}
+        moreLabel="アーティストをもっと見る"
+      >
         <ul className="flex flex-col gap-2">
           {artists.map((artist) => {
             const imageSrc = artistImageSrc(artist.imageUrl, artist.spotifyId);
@@ -162,7 +212,12 @@ export function SearchResults({ query, results }: SearchResultsProps) {
         </ul>
       </Section>
 
-      <Section title="アルバム" count={albums.length}>
+      <Section
+        title="アルバム"
+        count={albums.length}
+        moreHref={moreHrefFor("albums", albums.length)}
+        moreLabel="アルバムをもっと見る"
+      >
         <ul className="flex flex-col gap-2">
           {albums.map((album) => (
             <li key={album.id}>

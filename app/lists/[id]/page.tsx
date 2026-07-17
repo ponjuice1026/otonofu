@@ -6,6 +6,7 @@ import { AlbumCover } from "@/components/spotify/AlbumCover";
 import { AlbumSearchAdd } from "@/components/list/AlbumSearchAdd";
 import { ListItemControls } from "@/components/list/ListItemControls";
 import { ListOwnerActions } from "@/components/list/ListOwnerActions";
+import { ShareButton } from "@/components/ui/ShareButton";
 import { UserLink } from "@/components/user/UserLink";
 import { pageTitle, siteUrl } from "@/lib/site";
 import type { UserListItem } from "@/lib/types";
@@ -83,6 +84,9 @@ export default async function ListDetailPage({ params }: PageProps) {
             {list.description}
           </p>
         )}
+        <div className="mt-3">
+          <ShareButton url={`/lists/${list.id}`} title={list.title} />
+        </div>
       </header>
 
       {isOwner && (

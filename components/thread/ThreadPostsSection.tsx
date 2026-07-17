@@ -169,7 +169,7 @@ export function ThreadPostsSection({
   return (
     <>
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-semibold text-zinc-100">
+        <h2 className="mb-4 text-lg font-semibold text-[var(--foreground)]">
           コメント ({(totalPostCount ?? posts.length).toLocaleString("ja-JP")})
         </h2>
         <ThreadPostList
@@ -192,13 +192,13 @@ export function ThreadPostsSection({
 
       <section
         ref={formRef}
-        className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-5 py-5"
+        className="rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-5 py-5"
       >
-        <h2 className="mb-4 text-lg font-semibold text-zinc-100">
+        <h2 className="mb-4 text-lg font-semibold text-[var(--foreground)]">
           コメントを投稿
         </h2>
         {isLocked ? (
-          <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-300">
+          <p className="alert alert-warning text-sm">
             このセッションは凍結されています。新規の投稿・返信・投票はできません。
           </p>
         ) : (

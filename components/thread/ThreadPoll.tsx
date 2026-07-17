@@ -101,9 +101,9 @@ export function ThreadPoll({
   const viewedOnly = selectedOption?.excludeFromTally === true;
 
   return (
-    <section className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900/50 px-5 py-5">
-      <h2 className="mb-1 text-lg font-semibold text-zinc-100">投票</h2>
-      <p className="mb-4 text-xs text-zinc-500">
+    <section className="mb-8 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-5 py-5">
+      <h2 className="mb-1 text-lg font-semibold text-[var(--foreground)]">投票</h2>
+      <p className="mb-4 text-xs text-[var(--muted)]">
         ログイン不要 · 1人1票
         {hasVoted
           ? viewedOnly
@@ -117,7 +117,7 @@ export function ThreadPoll({
       {hasVoted ? (
         <PollResults poll={displayPoll} />
       ) : isLocked ? (
-        <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-300">
+        <p className="alert alert-warning text-sm">
           このセッションは凍結されているため投票できません。
         </p>
       ) : (
@@ -126,7 +126,7 @@ export function ThreadPoll({
 
           {tallyOptions.length > 0 && (
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-xs font-medium text-zinc-400">
+              <legend className="mb-1 text-xs font-medium text-[var(--muted-foreground)]">
                 投票する
               </legend>
               {tallyOptions.map((option) => (
@@ -152,11 +152,7 @@ export function ThreadPoll({
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={pending}
-            className="self-start rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-60"
-          >
+          <button type="submit" disabled={pending} className="btn-primary self-start">
             {pending ? "送信中…" : "投票する / 結果を見る"}
           </button>
         </form>
@@ -190,8 +186,8 @@ function PollOptionChoice({
     <label
       className={`flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 transition ${
         viewOnly
-          ? "border-sky-500/20 bg-zinc-900/80 hover:border-sky-500/40 has-[:checked]:border-sky-400/60 has-[:checked]:bg-sky-500/10"
-          : "border-zinc-700 bg-zinc-900 hover:border-amber-500/40 has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-500/5"
+          ? "border-sky-500/20 bg-[var(--surface-raised)] hover:border-sky-500/40 has-[:checked]:border-sky-400/60 has-[:checked]:bg-sky-500/10"
+          : "border-[var(--border-strong)] bg-[var(--surface)] hover:border-[var(--brand-amber)]/40 has-[:checked]:border-[var(--brand-amber)]/60 has-[:checked]:bg-[var(--brand-amber-soft)]"
       }`}
     >
       <input
@@ -202,7 +198,7 @@ function PollOptionChoice({
         className={
           viewOnly
             ? "text-sky-400 focus:ring-sky-400/40"
-            : "text-amber-500 focus:ring-amber-500/50"
+            : "text-[var(--brand-amber)] focus:ring-[var(--brand-amber)]/50"
         }
       />
       <OptionMedia option={option} />
@@ -227,7 +223,7 @@ function OptionMedia({ option }: { option: DiscussionPollOption }) {
   if (option.type === "album" && option.album) {
     const src = albumCover(option.album);
     return (
-      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-zinc-800">
+      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-[var(--surface-hover)]">
         {src ? (
           <Image src={src} alt="" fill className="object-cover" sizes="40px" />
         ) : null}
@@ -237,7 +233,7 @@ function OptionMedia({ option }: { option: DiscussionPollOption }) {
   if (option.type === "artist" && option.artist) {
     const src = artistImage(option.artist);
     return (
-      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-zinc-800">
+      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[var(--surface-hover)]">
         {src ? (
           <Image src={src} alt="" fill className="object-cover" sizes="40px" />
         ) : null}
@@ -257,11 +253,11 @@ function OptionLabel({
   if (option.type === "album" && option.album) {
     return (
       <div className="min-w-0">
-        <p className="truncate text-sm text-zinc-200">{option.album.title}</p>
-        <p className="truncate text-xs text-zinc-500">
+        <p className="truncate text-sm text-[var(--foreground)]">{option.album.title}</p>
+        <p className="truncate text-xs text-[var(--muted)]">
           <Link
             href={`/albums/${option.album.id}`}
-            className="hover:text-amber-400"
+            className="hover:text-[var(--brand-amber)]"
             onClick={(e) => e.stopPropagation()}
           >
             {option.album.artistName}
@@ -274,10 +270,10 @@ function OptionLabel({
   if (option.type === "artist" && option.artist) {
     return (
       <div className="min-w-0">
-        <p className="truncate text-sm text-zinc-200">{option.artist.name}</p>
+        <p className="truncate text-sm text-[var(--foreground)]">{option.artist.name}</p>
         <Link
           href={`/artists/${option.artist.id}`}
-          className="text-xs text-zinc-500 hover:text-amber-400"
+          className="text-xs text-[var(--muted)] hover:text-[var(--brand-amber)]"
           onClick={(e) => e.stopPropagation()}
         >
           アーティストページへ →
@@ -287,7 +283,7 @@ function OptionLabel({
   }
   return (
     <div className="min-w-0">
-      <p className="text-sm text-zinc-200">{option.label}</p>
+      <p className="text-sm text-[var(--foreground)]">{option.label}</p>
       {viewOnly && (
         <p className="text-xs text-sky-300/80">得票率の集計には含まれません</p>
       )}

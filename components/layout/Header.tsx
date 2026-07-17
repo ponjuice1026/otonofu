@@ -1,6 +1,7 @@
 import { HeaderAuth } from "@/components/layout/HeaderAuth";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { Logo } from "@/components/layout/Logo";
+import { MobileNavChips } from "@/components/layout/MobileNavChips";
 import { NavLinks } from "@/components/layout/NavLinks";
 import { SearchAutocomplete } from "@/components/layout/SearchAutocomplete";
 import { ThreadCreateLink } from "@/components/layout/ThreadCreateLink";
@@ -17,7 +18,12 @@ export async function Header() {
           <div className="min-w-0 flex-1">
             <SearchAutocomplete />
           </div>
+          <div className="shrink-0">
+            <NotificationBell />
+          </div>
         </div>
+
+        <MobileNavChips loggedIn={Boolean(user)} />
 
         <div className="hidden md:flex md:flex-col md:gap-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

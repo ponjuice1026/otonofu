@@ -38,6 +38,19 @@ export const HEADER_NAV_ITEMS: SiteNavItem[] = [
   },
 ];
 
+/**
+ * モバイルヘッダー直下の横スクロールナビチップ用。
+ * デスクトップの HEADER_NAV_ITEMS に「リスト」を加えたモバイル専用の並び。
+ */
+export const MOBILE_NAV_CHIP_ITEMS: SiteNavItem[] = [
+  ...HEADER_NAV_ITEMS,
+  {
+    href: "/lists",
+    label: "リスト",
+    match: (path) => path.startsWith("/lists"),
+  },
+];
+
 export type MobileNavItem = {
   id: "home" | "threads" | "create" | "charts" | "account";
   label: string;

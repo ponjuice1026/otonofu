@@ -26,6 +26,7 @@ import {
 import { getReviewForSessionThread } from "@/lib/data/reviews";
 import { buildReviewCardCoverProps } from "@/lib/reviews/review-card-cover";
 import { UserLink } from "@/components/user/UserLink";
+import { ShareButton } from "@/components/ui/ShareButton";
 import { formatThreadDate } from "@/lib/threads/format";
 import { profilePostName } from "@/lib/threads/validate";
 import { pageTitle, siteUrl } from "@/lib/site";
@@ -129,17 +130,17 @@ export default async function ThreadDetailPage({
     : null;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="page-shell mx-auto max-w-3xl">
       <Link
         href="/threads"
-        className="mb-6 inline-block text-sm text-zinc-500 transition hover:text-amber-400"
+        className="link-accent mb-6 inline-block text-sm hover:underline"
       >
         ← セッション一覧
       </Link>
 
       {sessionReview && reviewCover ? (
         <div className="mb-8">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-amber-400/90">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--brand-amber)]">
             レビューから作成されたセッション
           </p>
           <ReviewCard
@@ -151,19 +152,22 @@ export default async function ThreadDetailPage({
             commentCount={reviewCommentCounts.get(sessionReview.id) ?? 0}
             hideSessionLink
           />
-          <p className="mt-3 text-xs text-zinc-500">
-            作成者{" "}
-            <UserLink
-              userId={thread.authorId}
-              name={thread.authorName}
-              className="text-zinc-400 transition hover:text-zinc-200"
-            />{" "}
-            · {formatThreadDate(thread.createdAt)} ·
-            閲覧 {thread.viewCount.toLocaleString("ja-JP")} · 返信{" "}
-            {thread.postCount}
-          </p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-[var(--muted)]">
+              作成者{" "}
+              <UserLink
+                userId={thread.authorId}
+                name={thread.authorName}
+                className="text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
+              />{" "}
+              · {formatThreadDate(thread.createdAt)} ·
+              閲覧 {thread.viewCount.toLocaleString("ja-JP")} · 返信{" "}
+              {thread.postCount}
+            </p>
+            <ShareButton url={`/threads/${thread.id}`} title={thread.title} compact />
+          </div>
           {isLocked && (
-            <p className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-300">
+            <p className="alert alert-warning mt-3 text-xs">
               このセッションは凍結されています。
               {thread.lockReason ? `（理由: ${thread.lockReason}）` : ""}
             </p>
@@ -178,37 +182,40 @@ export default async function ThreadDetailPage({
           )}
         </div>
       ) : (
-        <article className="mb-8 rounded-lg border border-amber-500/30 bg-zinc-900/60 px-5 py-5">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-400/90">
+        <article className="mb-8 rounded-lg border border-[var(--brand-amber)]/30 bg-[var(--surface-raised)] px-5 py-5">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--brand-amber)]">
             セッション
           </p>
-          <h1 className="text-2xl font-bold text-zinc-50">{thread.title}</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">{thread.title}</h1>
           {thread.albumId && (
             <p className="mt-2 text-sm">
               <Link
                 href={`/albums/${thread.albumId}`}
-                className="text-amber-400 hover:underline"
+                className="link-accent hover:underline"
               >
                 アルバムページへ
               </Link>
             </p>
           )}
-          <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
+          <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-[var(--muted-foreground)]">
             {thread.body}
           </p>
-          <p className="mt-4 text-xs text-zinc-500">
-            作成者{" "}
-            <UserLink
-              userId={thread.authorId}
-              name={thread.authorName}
-              className="text-zinc-400 transition hover:text-zinc-200"
-            />{" "}
-            · {formatThreadDate(thread.createdAt)} ·
-            閲覧 {thread.viewCount.toLocaleString("ja-JP")} · 返信{" "}
-            {thread.postCount}
-          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-[var(--muted)]">
+              作成者{" "}
+              <UserLink
+                userId={thread.authorId}
+                name={thread.authorName}
+                className="text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
+              />{" "}
+              · {formatThreadDate(thread.createdAt)} ·
+              閲覧 {thread.viewCount.toLocaleString("ja-JP")} · 返信{" "}
+              {thread.postCount}
+            </p>
+            <ShareButton url={`/threads/${thread.id}`} title={thread.title} compact />
+          </div>
           {isLocked && (
-            <p className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-300">
+            <p className="alert alert-warning mt-3 text-xs">
               このセッションは凍結されています。
               {thread.lockReason ? `（理由: ${thread.lockReason}）` : ""}
             </p>
