@@ -2,7 +2,11 @@ import { getRecentReviews } from "@/lib/data/reviews";
 import { getDiscussionThreadsPage } from "@/lib/data/threads";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
 
-export const revalidate = 3600;
+// feed はクローラ専用で生成頻度が低い。getRecentReviews / getDiscussionThreadsPage
+// が cookie を読む server 版 Supabase クライアントを内部で連鎖的に使うため、
+// ISR(revalidate)のままだと静的レンダリング中に cookies() へ触れて
+// DYNAMIC_SERVER_USAGE で各関数が空を返し、feed が欠落する。動的レンダリングにする。
+export const dynamic = "force-dynamic";
 
 const FEED_ITEM_LIMIT = 30;
 
