@@ -7,7 +7,6 @@ import { OtherReleasesSection } from "@/components/artist/OtherReleasesSection";
 import { splitArtistDiscography } from "@/lib/albums/discography";
 import { getAlbumsByArtistId } from "@/lib/data/albums";
 import { getArtistById } from "@/lib/data/artists";
-import { findGenreForLabel } from "@/lib/genres";
 import { artistImageSrc } from "@/lib/covers";
 import { pageTitle, siteUrl } from "@/lib/site";
 
@@ -176,29 +175,6 @@ export default async function ArtistDetailPage({ params }: PageProps) {
               <div>
                 <dt className="inline text-[var(--muted)]">活動期間 </dt>
                 <dd className="inline">{activeYears}</dd>
-              </div>
-              <div>
-                <dt className="inline text-[var(--muted)]">ジャンル </dt>
-                <dd className="inline">
-                  {artist.genres.map((g, i) => {
-                    const genre = findGenreForLabel(g);
-                    return (
-                      <span key={`${g}-${i}`}>
-                        {i > 0 ? "、" : ""}
-                        {genre ? (
-                          <Link
-                            href={`/genres/${genre.slug}`}
-                            className="link-accent hover:underline"
-                          >
-                            {g}
-                          </Link>
-                        ) : (
-                          g
-                        )}
-                      </span>
-                    );
-                  })}
-                </dd>
               </div>
             </dl>
             {spotifyUrl && (

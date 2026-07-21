@@ -1,9 +1,8 @@
 export type AlbumCriteriaKey =
   | "lyrics"
-  | "melody"
-  | "performance"
+  | "musicality"
   | "atmosphere"
-  | "completion";
+  | "innovation";
 
 import type { AlbumCriteriaRatings as AlbumCriteriaRatingsType } from "@/lib/types";
 import {
@@ -25,12 +24,11 @@ export const ALBUM_RATING_CRITERIA: {
   dbColumn: string;
 }[] = [
   { key: "lyrics", label: "歌詞", formField: "ratingLyrics", dbColumn: "rating_lyrics" },
-  { key: "melody", label: "メロディ", formField: "ratingMelody", dbColumn: "rating_melody" },
   {
-    key: "performance",
-    label: "演奏技術",
-    formField: "ratingPerformance",
-    dbColumn: "rating_performance",
+    key: "musicality",
+    label: "音楽性",
+    formField: "ratingMusicality",
+    dbColumn: "rating_musicality",
   },
   {
     key: "atmosphere",
@@ -39,10 +37,10 @@ export const ALBUM_RATING_CRITERIA: {
     dbColumn: "rating_atmosphere",
   },
   {
-    key: "completion",
-    label: "完成度",
-    formField: "ratingCompletion",
-    dbColumn: "rating_completion",
+    key: "innovation",
+    label: "革新性",
+    formField: "ratingInnovation",
+    dbColumn: "rating_innovation",
   },
 ];
 
@@ -63,10 +61,9 @@ export function isCompleteCriteria(criteria: AlbumCriteriaRatings): boolean {
 export function emptyCriteriaRatings(): AlbumCriteriaRatings {
   return {
     lyrics: RATING_UNSET,
-    melody: RATING_UNSET,
-    performance: RATING_UNSET,
+    musicality: RATING_UNSET,
     atmosphere: RATING_UNSET,
-    completion: RATING_UNSET,
+    innovation: RATING_UNSET,
   };
 }
 
@@ -81,9 +78,38 @@ export function criteriaFromReview(review: {
   const base = clampRating(Math.round(review.rating));
   return {
     lyrics: base,
-    melody: base,
-    performance: base,
+    musicality: base,
     atmosphere: base,
-    completion: base,
+    innovation: base,
   };
+}
+
+/** 評価スコアの格付け。8以上=名盤、9以上=歴史に残る超名盤。 */
+export type AlbumTier = {
+  key: "legendary" | "masterpiece" | "excellent" | "solid" | "mixed" | "none";
+  label: string;
+  /** バッジ表示に使う色（CSS color） */
+  color: string;
+};
+
+export function albumTier(rating: number, ratingCount = 1): AlbumTier {
+  if (ratingCount <= 0) {
+    return { key: "none", label: "評価募集中", color: "#71717a" };
+  }
+  if (rating >= 9) {
+    return { key: "legendary", label: "歴史に残る超名盤", color: "#fbbf24" };
+  }
+  if (rating >= 8) {
+    return { key: "masterpiece", label: "名盤", color: "#f59e0b" };
+  }
+  if (rating >= 7) {
+    return { key: "excellent", label: "傑作", color: "#a3e635" };
+  }
+  if (rating >= 6) {
+    return { key: "solid", label: "良作", color: "#34d399" };
+  }
+  if (rating >= 4) {
+    return { key: "mixed", label: "賛否両論", color: "#60a5fa" };
+  }
+  return { key: "none", label: "", color: "#71717a" };
 }

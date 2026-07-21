@@ -14,7 +14,7 @@ import { StarRating } from "@/components/ui/StarRating";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { getUser } from "@/lib/auth/session";
 import { getAlbumById, getReleaseTypeLabel } from "@/lib/data/albums";
-import { findGenreForLabel } from "@/lib/genres";
+import { albumTier } from "@/lib/ratings";
 import { albumCoverSrc } from "@/lib/covers";
 import { getArtistById } from "@/lib/data/artists";
 import { getReviewReactionStates } from "@/lib/data/reactions";
@@ -182,6 +182,8 @@ export default async function AlbumDetailPage({
     ? `https://open.spotify.com/album/${album.spotifyId}`
     : null;
 
+  const tier = albumTier(album.avgRating, album.ratingCount);
+
   const userRatingsObject = Object.fromEntries(userTrackRatings);
   const communityAveragesObject = Object.fromEntries(trackAverages);
 
@@ -271,20 +273,7 @@ export default async function AlbumDetailPage({
         </div>
         <div className="flex-1">
           <p className="text-sm text-[var(--muted)]">
-            {album.year} · {getReleaseTypeLabel(album.type)} ·{" "}
-            {(() => {
-              const genre = findGenreForLabel(album.genre);
-              return genre ? (
-                <Link
-                  href={`/genres/${genre.slug}`}
-                  className="link-accent hover:underline"
-                >
-                  {album.genre}
-                </Link>
-              ) : (
-                album.genre
-              );
-            })()}
+            {album.year} · {getReleaseTypeLabel(album.type)}
             {tracks.length > 0 ? ` · ${tracks.length} 曲` : ""}
           </p>
           <h1 className="mt-1 text-3xl font-bold text-[var(--foreground)]">{album.title}</h1>
@@ -296,11 +285,19 @@ export default async function AlbumDetailPage({
             />
           </p>
           <div className="mt-4 flex flex-col gap-2">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <StarRating value={album.avgRating} showBar size="lg" />
               <span className="text-sm text-[var(--muted)]">
                 平均 · {album.ratingCount.toLocaleString("ja-JP")} 件の評価
               </span>
+              {tier.label && album.ratingCount > 0 && (
+                <span
+                  className="rounded-full px-2.5 py-0.5 text-xs font-bold"
+                  style={{ color: "#18181b", backgroundColor: tier.color }}
+                >
+                  {tier.label}
+                </span>
+              )}
             </div>
           </div>
           {spotifyUrl && (
@@ -344,71 +341,74 @@ export default async function AlbumDetailPage({
         </div>
       </div>
 
-      {tracks.length > 0 ? (
-        <TrackRatingList
-          albumId={album.id}
-          tracks={tracks}
-          spotifyUrl={spotifyUrl}
-          isLoggedIn={Boolean(user)}
-          userRatings={userRatingsObject}
-          communityAverages={communityAveragesObject}
-        />
-      ) : (
-        <section className="mt-10">
-          <h2 className="mb-4 text-lg font-semibold text-[var(--foreground)]">収録曲</h2>
-          <p className="text-sm text-[var(--muted)]">
-            収録曲情報はまだ登録されていません。しばらくしてから再度お試しください。
-          </p>
-        </section>
-      )}
-
-      <section id="reviews" className="mt-10 scroll-mt-8">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-[var(--foreground)]">
-            みんなのレビュー
+      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <section id="reviews" className="scroll-mt-8 lg:col-span-2">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">
+              評価とコメント
+              {reviewCount > 0 && (
+                <span className="ml-2 text-sm font-normal text-[var(--muted)]">
+                  （全{reviewCount.toLocaleString("ja-JP")}件）
+                </span>
+              )}
+            </h2>
             {reviewCount > 0 && (
-              <span className="ml-2 text-sm font-normal text-[var(--muted)]">
-                （全{reviewCount.toLocaleString("ja-JP")}件）
-              </span>
+              <ReviewSortTabs albumId={album.id} sort={reviewSort} />
             )}
-          </h2>
-          {reviewCount > 0 && (
-            <ReviewSortTabs albumId={album.id} sort={reviewSort} />
-          )}
-        </div>
-        {reviewCount > 0 ? (
-          reviews.length > 0 ? (
-            <>
-              <div className="flex flex-col gap-4">
-                {reviews.map((review) => (
-                  <div key={review.id} id={`review-${review.id}`}>
-                    <ReviewCard
-                      review={review}
-                      showAlbumTitle={false}
-                      reactionState={reactionMap.get(review.id)}
-                      comments={commentsByReview.get(review.id) ?? []}
-                      currentUserId={user?.id ?? null}
-                      isAdmin={isAdmin}
-                    />
-                  </div>
-                ))}
-              </div>
-              <ReviewsPagination
-                albumId={album.id}
-                currentPage={reviewPage}
-                totalCount={reviewCount}
-                sort={reviewSort}
-              />
-            </>
+          </div>
+          {reviewCount > 0 ? (
+            reviews.length > 0 ? (
+              <>
+                <div className="flex flex-col gap-4">
+                  {reviews.map((review) => (
+                    <div key={review.id} id={`review-${review.id}`}>
+                      <ReviewCard
+                        review={review}
+                        showAlbumTitle={false}
+                        reactionState={reactionMap.get(review.id)}
+                        comments={commentsByReview.get(review.id) ?? []}
+                        currentUserId={user?.id ?? null}
+                        isAdmin={isAdmin}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <ReviewsPagination
+                  albumId={album.id}
+                  currentPage={reviewPage}
+                  totalCount={reviewCount}
+                  sort={reviewSort}
+                />
+              </>
+            ) : (
+              <p className="text-sm text-[var(--muted)]">
+                このページに表示できるレビューはありません。
+              </p>
+            )
           ) : (
-            <p className="text-sm text-[var(--muted)]">
-              このページに表示できるレビューはありません。
-            </p>
-          )
-        ) : (
-          <p className="text-sm text-[var(--muted)]">まだレビューはありません。</p>
-        )}
-      </section>
+            <p className="text-sm text-[var(--muted)]">まだレビューはありません。</p>
+          )}
+        </section>
+        <aside className="lg:col-span-1">
+          {tracks.length > 0 ? (
+            <TrackRatingList
+              albumId={album.id}
+              tracks={tracks}
+              spotifyUrl={spotifyUrl}
+              isLoggedIn={Boolean(user)}
+              userRatings={userRatingsObject}
+              communityAverages={communityAveragesObject}
+            />
+          ) : (
+            <section className="mt-10">
+              <h2 className="mb-4 text-lg font-semibold text-[var(--foreground)]">収録曲</h2>
+              <p className="text-sm text-[var(--muted)]">
+                収録曲情報はまだ登録されていません。しばらくしてから再度お試しください。
+              </p>
+            </section>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }

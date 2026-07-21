@@ -40,27 +40,24 @@ export function mapAlbum(row: DbAlbum): Album {
 
 function mapCriteriaRatings(row: DbReview): Review["criteriaRatings"] {
   const lyrics = row.rating_lyrics;
-  const melody = row.rating_melody;
-  const performance = row.rating_performance;
+  const musicality = row.rating_musicality;
   const atmosphere = row.rating_atmosphere;
-  const completion = row.rating_completion;
+  const innovation = row.rating_innovation;
 
   if (
     lyrics == null ||
-    melody == null ||
-    performance == null ||
+    musicality == null ||
     atmosphere == null ||
-    completion == null
+    innovation == null
   ) {
     return undefined;
   }
 
   return {
     lyrics: Number(lyrics),
-    melody: Number(melody),
-    performance: Number(performance),
+    musicality: Number(musicality),
     atmosphere: Number(atmosphere),
-    completion: Number(completion),
+    innovation: Number(innovation),
   };
 }
 

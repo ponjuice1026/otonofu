@@ -90,7 +90,7 @@ export function AlbumReviewForm({
         {existingReview ? "あなたのレビューを編集" : "このアルバムを評価"}
       </h3>
       <p className="mb-4 text-xs text-zinc-500">
-        歌詞・メロディ・演奏技術・雰囲気・完成度を0〜10で評価し、平均が総合評価になります。
+        歌詞・音楽性・雰囲気・革新性を0〜10で評価し、平均が総合評価になります。
       </p>
 
       <form action={formAction} className="flex flex-col gap-4">

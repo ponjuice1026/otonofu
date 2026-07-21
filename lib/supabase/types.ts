@@ -42,10 +42,9 @@ export type DbReview = {
   username: string;
   rating: number;
   rating_lyrics: number | null;
-  rating_melody: number | null;
-  rating_performance: number | null;
+  rating_musicality: number | null;
   rating_atmosphere: number | null;
-  rating_completion: number | null;
+  rating_innovation: number | null;
   body: string;
   created_at: string;
   updated_at?: string | null;

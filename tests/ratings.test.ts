@@ -17,10 +17,9 @@ import type { AlbumCriteriaRatings } from "@/lib/types";
 
 const criteria = (values: number[]): AlbumCriteriaRatings => ({
   lyrics: values[0],
-  melody: values[1],
-  performance: values[2],
-  atmosphere: values[3],
-  completion: values[4],
+  musicality: values[1],
+  atmosphere: values[2],
+  innovation: values[3],
 });
 
 describe("clampRating", () => {
@@ -79,29 +78,29 @@ describe("isValidRating", () => {
 
 describe("averageCriteriaRatings", () => {
   it("全て同値なら平均もその値", () => {
-    expect(averageCriteriaRatings(criteria([8, 8, 8, 8, 8]))).toBe(8);
+    expect(averageCriteriaRatings(criteria([8, 8, 8, 8]))).toBe(8);
   });
 
-  it("合計35→平均7.0", () => {
-    expect(averageCriteriaRatings(criteria([8, 7, 9, 6, 5]))).toBe(7);
+  it("合計28→平均7.0", () => {
+    expect(averageCriteriaRatings(criteria([8, 7, 9, 4]))).toBe(7);
   });
 
-  it("小数第1位に丸める（合計39→7.8）", () => {
-    expect(averageCriteriaRatings(criteria([8, 8, 8, 8, 7]))).toBe(7.8);
+  it("小数第1位に丸める（合計31→7.8）", () => {
+    expect(averageCriteriaRatings(criteria([8, 8, 8, 7]))).toBe(7.8);
   });
 
   it("全て0なら0", () => {
-    expect(averageCriteriaRatings(criteria([0, 0, 0, 0, 0]))).toBe(0);
+    expect(averageCriteriaRatings(criteria([0, 0, 0, 0]))).toBe(0);
   });
 });
 
 describe("isCompleteCriteria", () => {
   it("全項目が有効なら完成", () => {
-    expect(isCompleteCriteria(criteria([5, 6, 7, 8, 9]))).toBe(true);
+    expect(isCompleteCriteria(criteria([5, 6, 7, 8]))).toBe(true);
   });
 
   it("1項目でも未設定なら未完成", () => {
-    expect(isCompleteCriteria(criteria([5, 6, 7, 8, RATING_UNSET]))).toBe(false);
+    expect(isCompleteCriteria(criteria([5, 6, 7, RATING_UNSET]))).toBe(false);
   });
 
   it("emptyCriteriaRatingsは未完成", () => {
@@ -113,34 +112,33 @@ describe("emptyCriteriaRatings", () => {
   it("全項目がRATING_UNSET", () => {
     expect(emptyCriteriaRatings()).toEqual({
       lyrics: RATING_UNSET,
-      melody: RATING_UNSET,
-      performance: RATING_UNSET,
+      musicality: RATING_UNSET,
       atmosphere: RATING_UNSET,
-      completion: RATING_UNSET,
+      innovation: RATING_UNSET,
     });
   });
 });
 
 describe("criteriaFromReview", () => {
   it("criteriaRatingsが完成していればそれを返す", () => {
-    const cr = criteria([1, 2, 3, 4, 5]);
+    const cr = criteria([1, 2, 3, 4]);
     expect(criteriaFromReview({ criteriaRatings: cr, rating: 9 })).toEqual(cr);
   });
 
   it("criteriaRatingsが無ければ総合評価を丸めた値で全項目を埋める", () => {
-    expect(criteriaFromReview({ rating: 7.4 })).toEqual(criteria([7, 7, 7, 7, 7]));
+    expect(criteriaFromReview({ rating: 7.4 })).toEqual(criteria([7, 7, 7, 7]));
   });
 
   it("criteriaRatingsが未完成ならフォールバックする", () => {
-    const incomplete = criteria([1, 2, 3, 4, RATING_UNSET]);
+    const incomplete = criteria([1, 2, 3, RATING_UNSET]);
     expect(
       criteriaFromReview({ criteriaRatings: incomplete, rating: 6 }),
-    ).toEqual(criteria([6, 6, 6, 6, 6]));
+    ).toEqual(criteria([6, 6, 6, 6]));
   });
 
   it("総合評価は0-10にクランプされる", () => {
     expect(criteriaFromReview({ rating: 12 })).toEqual(
-      criteria([RATING_MAX, RATING_MAX, RATING_MAX, RATING_MAX, RATING_MAX]),
+      criteria([RATING_MAX, RATING_MAX, RATING_MAX, RATING_MAX]),
     );
   });
 });

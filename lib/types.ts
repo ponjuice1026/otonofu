@@ -42,10 +42,9 @@ export type Album = {
 
 export type AlbumCriteriaRatings = {
   lyrics: number;
-  melody: number;
-  performance: number;
+  musicality: number;
   atmosphere: number;
-  completion: number;
+  innovation: number;
 };
 
 export type Review = {

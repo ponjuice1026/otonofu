@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Outfit } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -67,6 +68,12 @@ export default function RootLayout({
       className={`${outfit.variable} h-full antialiased`}
     >
       <body className="site-body">
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5126238905573118"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <SiteBackdrop />
         <div className="site-frame">
           <Header />

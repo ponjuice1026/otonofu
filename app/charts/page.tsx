@@ -2,10 +2,8 @@ import { AlbumRankingList } from "@/components/album/AlbumRankingList";
 import { AlbumRankingFilters } from "@/components/album/AlbumRankingFilters";
 import { AlbumCard } from "@/components/album/AlbumCard";
 import {
-  rankingCategoryLabel,
   rankingPeriodLabel,
   rankingSortLabel,
-  parseRankingCategory,
   parseRankingPeriod,
   parseRankingSort,
 } from "@/lib/albums/ranking-filters";
@@ -15,7 +13,7 @@ import { getArtistNameMapForIds } from "@/lib/data/artists";
 import { pageTitle, siteUrl } from "@/lib/site";
 
 const CHARTS_DESCRIPTION =
-  "オトノフのアルバムランキング。ユーザー評価の高いアルバムや期間・ジャンル別の人気作をチェックできる。";
+  "オトノフのアルバムランキング。ユーザー評価の高いアルバムや期間別の人気作をチェックできる。";
 
 export const metadata = {
   title: pageTitle("ランキング"),
@@ -36,7 +34,6 @@ const RECOMMENDED_ALBUMS_LIMIT = 10;
 type PageProps = {
   searchParams: Promise<{
     period?: string;
-    category?: string;
     sort?: string;
   }>;
 };
@@ -44,18 +41,15 @@ type PageProps = {
 export default async function ChartsPage({ searchParams }: PageProps) {
   const {
     period: periodParam,
-    category: categoryParam,
     sort: sortParam,
   } = await searchParams;
   const period = parseRankingPeriod(periodParam);
-  const category = parseRankingCategory(categoryParam);
   const sort = parseRankingSort(sortParam);
 
   const user = await getUser();
   const ranked = await getRankedAlbums({
     limit: RANKING_LIMIT,
     period,
-    category,
     sort,
   });
   const rankedIds = ranked.map((album) => album.id);
@@ -74,11 +68,10 @@ export default async function ChartsPage({ searchParams }: PageProps) {
   const artistNames = await getArtistNameMapForIds(artistIds);
 
   const rankingDesc =
-    period === "all" && category === "all" && sort === "rating"
+    period === "all" && sort === "rating"
       ? "ユーザー評価の高いアルバム"
       : [
           period !== "all" ? `${rankingPeriodLabel(period)}の評価` : null,
-          category !== "all" ? rankingCategoryLabel(category) : null,
           rankingSortLabel(sort),
         ]
           .filter(Boolean)
@@ -102,7 +95,6 @@ export default async function ChartsPage({ searchParams }: PageProps) {
         <div className="mb-5">
           <AlbumRankingFilters
             period={period}
-            category={category}
             sort={sort}
             basePath="/charts"
           />

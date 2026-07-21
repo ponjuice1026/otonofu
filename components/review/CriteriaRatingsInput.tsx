@@ -46,11 +46,11 @@ export function CriteriaRatingsInput({
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <span className="text-sm text-zinc-400">総合（5項目の平均）</span>
+          <span className="text-sm text-zinc-400">総合（4項目の平均）</span>
           {complete ? (
             <StarRating value={average} size="lg" />
           ) : (
-            <span className="text-sm text-zinc-500">5項目すべて評価してください</span>
+            <span className="text-sm text-zinc-500">4項目すべて評価してください</span>
           )}
         </div>
         {complete && (

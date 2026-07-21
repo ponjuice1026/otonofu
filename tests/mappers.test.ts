@@ -47,10 +47,9 @@ function dbReview(overrides: Partial<DbReview> = {}): DbReview {
     username: "名無し",
     rating: 8,
     rating_lyrics: null,
-    rating_melody: null,
-    rating_performance: null,
+    rating_musicality: null,
     rating_atmosphere: null,
-    rating_completion: null,
+    rating_innovation: null,
     body: "本文",
     created_at: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -158,10 +157,9 @@ describe("mapReview", () => {
     const result = mapReview(
       dbReview({
         rating_lyrics: 8,
-        rating_melody: 8,
-        rating_performance: 8,
+        rating_musicality: 8,
         rating_atmosphere: 8,
-        rating_completion: null,
+        rating_innovation: null,
       }),
     );
     expect(result.criteriaRatings).toBeUndefined();
@@ -171,18 +169,16 @@ describe("mapReview", () => {
     const result = mapReview(
       dbReview({
         rating_lyrics: 1,
-        rating_melody: 2,
-        rating_performance: 3,
-        rating_atmosphere: 4,
-        rating_completion: 5,
+        rating_musicality: 2,
+        rating_atmosphere: 3,
+        rating_innovation: 4,
       }),
     );
     expect(result.criteriaRatings).toEqual({
       lyrics: 1,
-      melody: 2,
-      performance: 3,
-      atmosphere: 4,
-      completion: 5,
+      musicality: 2,
+      atmosphere: 3,
+      innovation: 4,
     });
   });
 

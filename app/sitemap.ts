@@ -3,7 +3,6 @@ import { getAlbums } from "@/lib/data/albums";
 import { getArtists } from "@/lib/data/artists";
 import { getDiscussionThreadsPage } from "@/lib/data/threads";
 import { getPublicLists } from "@/lib/data/lists";
-import { GENRES } from "@/lib/genres";
 import { siteUrl } from "@/lib/site";
 
 // sitemap はクローラ専用で生成頻度が低い。配下のデータ取得（getAlbums /
@@ -24,7 +23,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/albums",
     "/artists",
     "/charts",
-    "/genres",
     "/threads",
     "/lists",
     "/search",
@@ -35,13 +33,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(),
     changeFrequency: "daily",
     priority: path === "/" ? 1 : 0.7,
-  }));
-
-  const genreEntries: MetadataRoute.Sitemap = GENRES.map((genre) => ({
-    url: siteUrl(`/genres/${genre.slug}`),
-    lastModified: new Date(),
-    changeFrequency: "weekly",
-    priority: 0.6,
   }));
 
   const [albums, artists, publicLists] = await Promise.all([
@@ -89,7 +80,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticEntries,
-    ...genreEntries,
     ...albumEntries,
     ...artistEntries,
     ...listEntries,

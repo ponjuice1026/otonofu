@@ -79,7 +79,7 @@ export async function submitAlbumReview(
     if (!criteria) {
       return {
         error:
-          "歌詞・メロディ・演奏技術・雰囲気・完成度の5項目すべてを0〜10で評価してください。",
+          "歌詞・音楽性・雰囲気・革新性の4項目すべてを0〜10で評価してください。",
       };
     }
 
@@ -107,10 +107,9 @@ export async function submitAlbumReview(
     const reviewPayload = {
       rating,
       rating_lyrics: criteria.lyrics,
-      rating_melody: criteria.melody,
-      rating_performance: criteria.performance,
+      rating_musicality: criteria.musicality,
       rating_atmosphere: criteria.atmosphere,
-      rating_completion: criteria.completion,
+      rating_innovation: criteria.innovation,
       body,
       album_title: album.title,
       artist_id: album.artistId,

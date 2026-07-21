@@ -64,7 +64,7 @@ export function CriteriaRatingsSummary({
   return (
     <div className="rounded-md border border-zinc-800 bg-zinc-950/50 p-3">
       <div className="mb-3 flex items-center gap-3">
-        <span className="text-sm text-zinc-400">総合評価（5項目の平均）</span>
+        <span className="text-sm text-zinc-400">総合評価（4項目の平均）</span>
         <StarRating value={average} showBar />
       </div>
       <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-zinc-800">
