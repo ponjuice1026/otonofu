@@ -1,12 +1,11 @@
 "use server";
 
-import { getUser } from "@/lib/auth/session";
 import {
   CONTACT_LIMITS,
   isContactCategory,
   type ContactCategory,
 } from "@/lib/contact/constants";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { getOrCreateVoterKey } from "@/lib/threads/voter";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -17,6 +16,34 @@ export type ContactActionState = {
 
 /** RFC を厳密に追わない実用的なメール形式チェック。 */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * submit_contact_message RPC が投げる英語の例外メッセージを
+ * 日本語のエラー文言にマップする。
+ */
+function mapContactRpcError(message: string): string {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("rate limit exceeded")) {
+    return "送信が続いています。しばらく時間をおいてから再度お試しください。";
+  }
+  if (normalized.includes("too many urls")) {
+    return "URL が多すぎます。数を減らして再度お試しください。";
+  }
+  if (normalized.includes("invalid email")) {
+    return "メールアドレスの形式が正しくありません。";
+  }
+  if (normalized.includes("invalid body")) {
+    return "お問い合わせ内容を10文字以上で入力してください。";
+  }
+  if (normalized.includes("invalid name")) {
+    return "お名前を入力してください。";
+  }
+  if (normalized.includes("invalid category")) {
+    return "お問い合わせの種類を選択してください。";
+  }
+  return "送信に失敗しました。時間をおいて再度お試しください。";
+}
 
 function cleanField(raw: FormDataEntryValue | null, max: number): string {
   return String(raw ?? "").trim().slice(0, max);
@@ -55,28 +82,21 @@ export async function submitContactMessage(
     return { error: "お問い合わせ内容を10文字以上で入力してください。" };
   }
 
-  const allowed = await checkRateLimit("contact", { dedupBody: body });
-  if (!allowed) {
-    return {
-      error:
-        "送信が続いています。しばらく時間をおいてから再度お試しください。",
-    };
-  }
-
-  const user = await getUser();
-
+  // 挿入は security definer RPC 経由（DB 直叩きバイパス防止 / A-2）。
+  // レート制限（contact: 3/時）と重複投稿チェックは RPC 内部で行う。
+  // sender_id は RPC 内部で auth.uid() が使われる。
   const supabase = await createClient();
-  const { error } = await supabase.from("contact_messages").insert({
-    sender_id: user?.id ?? null,
-    category,
-    name,
-    email,
-    body,
+  const { error } = await supabase.rpc("submit_contact_message", {
+    message_category: category,
+    sender_name: name,
+    sender_email: email,
+    message_body: body,
+    voter_key: await getOrCreateVoterKey(),
   });
 
   if (error) {
     console.error("[Supabase] submitContactMessage:", error.message);
-    return { error: "送信に失敗しました。時間をおいて再度お試しください。" };
+    return { error: mapContactRpcError(error.message) };
   }
 
   return {

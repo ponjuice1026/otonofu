@@ -21,7 +21,9 @@ export const RATE_LIMITS = {
   list_create: { maxCount: 10, windowSeconds: 60 * 60 }, // リスト作成 10/時
   follow: { maxCount: 60, windowSeconds: 60 }, // フォロー 60/分
   contribution: { maxCount: 5, windowSeconds: 60 * 60 * 24 }, // データ申請 5/日
-  contact: { maxCount: 3, windowSeconds: 60 * 60 }, // お問い合わせ 3/時
+  // お問い合わせ 3/時。実際の判定は submit_contact_message RPC 内で行う
+  // （add_contact_messages.sql の値と揃えること）。
+  contact: { maxCount: 3, windowSeconds: 60 * 60 },
 } as const;
 
 export type RateLimitAction = keyof typeof RATE_LIMITS;
