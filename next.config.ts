@@ -1,6 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      // アルバム一覧は /charts の「新着順」タブに統合した。
+      // /albums/[id] は残るので、完全一致のみリダイレクトする。
+      {
+        source: "/albums",
+        destination: "/charts?sort=newest",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     // Vercel の画像最適化クォータを超過すると _next/image が 402 を返し、
     // 全ページの画像（アルバムカバー・アーティスト画像・アバター等）が

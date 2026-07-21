@@ -16,14 +16,11 @@ export const HEADER_NAV_ITEMS: SiteNavItem[] = [
       path.startsWith("/threads") && !path.startsWith("/threads/new"),
   },
   {
-    href: "/albums",
-    label: "アルバム",
-    match: (path) => path.startsWith("/albums"),
-  },
-  {
+    // アルバム一覧はランキングの「新着順」タブに統合済み。
+    // アルバム詳細(/albums/[id])からもこのタブを現在地として点灯させる。
     href: "/charts",
     label: "ランキング",
-    match: (path) => path.startsWith("/charts"),
+    match: (path) => path.startsWith("/charts") || path.startsWith("/albums"),
   },
   {
     href: "/following",
@@ -75,7 +72,7 @@ export const MOBILE_NAV_ITEMS: MobileNavItem[] = [
   {
     id: "charts",
     label: "ランキング",
-    match: (path) => path.startsWith("/charts"),
+    match: (path) => path.startsWith("/charts") || path.startsWith("/albums"),
   },
   {
     id: "account",

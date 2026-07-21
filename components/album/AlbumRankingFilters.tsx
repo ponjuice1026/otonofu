@@ -2,8 +2,8 @@ import Link from "next/link";
 import {
   RANKING_PERIOD_OPTIONS,
   RANKING_SORT_OPTIONS,
-  albumsPageHref,
   chartsPageHref,
+  sortSupportsPeriod,
   type RankingPeriod,
   type RankingSort,
 } from "@/lib/albums/ranking-filters";
@@ -11,18 +11,15 @@ import {
 type AlbumRankingFiltersProps = {
   period: RankingPeriod;
   sort: RankingSort;
-  basePath?: "/albums" | "/charts";
 };
 
 export function AlbumRankingFilters({
   period,
   sort,
-  basePath = "/charts",
 }: AlbumRankingFiltersProps) {
+  // 並び順を変えたらページは 1 に戻す（page はここでは渡さない）。
   const hrefFor = (params: { period?: RankingPeriod; sort?: RankingSort }) =>
-    basePath === "/albums"
-      ? albumsPageHref({ ...params, hash: "ranking" })
-      : chartsPageHref({ ...params, hash: "ranking" });
+    chartsPageHref({ ...params, hash: "ranking" });
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -48,7 +45,10 @@ export function AlbumRankingFilters({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div
+        className="flex flex-wrap items-center gap-x-2 gap-y-1"
+        hidden={!sortSupportsPeriod(sort)}
+      >
         <p className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
           期間
         </p>

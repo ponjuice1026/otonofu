@@ -22,7 +22,10 @@ export function Footer() {
           <Link href="/charts" className="transition hover:text-neutral-300">
             ランキング
           </Link>
-          <Link href="/albums" className="transition hover:text-neutral-300">
+          <Link
+            href="/charts?sort=newest"
+            className="transition hover:text-neutral-300"
+          >
             アルバム
           </Link>
         </div>

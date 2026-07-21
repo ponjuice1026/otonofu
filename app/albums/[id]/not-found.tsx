@@ -9,7 +9,7 @@ export default function AlbumNotFound() {
         このアルバムは削除されたか、存在しない可能性があります。
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Link href="/albums" className="btn-primary">
+        <Link href="/charts?sort=newest" className="btn-primary">
           アルバム一覧へ戻る
         </Link>
         <Link href="/" className="btn-secondary">

@@ -16,9 +16,6 @@ function resolveArtistBackLink(
   if (referer) {
     try {
       const url = new URL(referer);
-      if (url.pathname.startsWith("/albums")) {
-        return { href: "/albums", label: "← アルバム一覧" };
-      }
       if (url.pathname.startsWith("/charts")) {
         return { href: "/charts", label: "← ランキング" };
       }

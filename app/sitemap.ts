@@ -20,7 +20,6 @@ const MAX_THREAD_PAGES = 50; // published スレッドを最大 500 件まで（
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [
     "/",
-    "/albums",
     "/artists",
     "/charts",
     "/threads",

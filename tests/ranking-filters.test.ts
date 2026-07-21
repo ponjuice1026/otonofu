@@ -8,9 +8,8 @@ import {
   rankingPeriodLabel,
   rankingSortLabel,
   rankingCategoryLabel,
-  albumsPageHref,
   chartsPageHref,
-  rankingPageHref,
+  sortSupportsPeriod,
   rankingPeriodSince,
   type ArtistRankingMeta,
 } from "@/lib/albums/ranking-filters";
@@ -54,8 +53,9 @@ describe("parseRankingPeriod", () => {
 });
 
 describe("parseRankingSort", () => {
-  it("reviewsはそのまま", () => {
+  it("reviews/newestはそのまま", () => {
     expect(parseRankingSort("reviews")).toBe("reviews");
+    expect(parseRankingSort("newest")).toBe("newest");
   });
   it("それ以外はrating", () => {
     expect(parseRankingSort("rating")).toBe("rating");
@@ -151,56 +151,62 @@ describe("ラベル取得", () => {
   });
 });
 
-describe("rankingPageHref", () => {
-  it("全てデフォルトならbasePathのみ", () => {
-    expect(rankingPageHref("/albums", {})).toBe("/albums");
+describe("chartsPageHref", () => {
+  it("全てデフォルトなら/chartsのみ", () => {
+    expect(chartsPageHref({})).toBe("/charts");
   });
 
-  it("page>1のときpageクエリを付ける(/albumsのみ)", () => {
-    expect(rankingPageHref("/albums", { page: 3 })).toBe("/albums?page=3");
+  it("page>1のときpageクエリを付ける", () => {
+    expect(chartsPageHref({ sort: "newest", page: 3 })).toBe(
+      "/charts?sort=newest&page=3",
+    );
   });
 
   it("page=1はクエリを付けない", () => {
-    expect(rankingPageHref("/albums", { page: 1 })).toBe("/albums");
-  });
-
-  it("/chartsはpageを無視する", () => {
-    expect(rankingPageHref("/charts", { page: 3 })).toBe("/charts");
+    expect(chartsPageHref({ page: 1 })).toBe("/charts");
   });
 
   it("非デフォルトのperiod/category/sortを付ける", () => {
     expect(
-      rankingPageHref("/albums", {
+      chartsPageHref({
         period: "week",
         category: "japanese",
         sort: "reviews",
       }),
-    ).toBe("/albums?period=week&category=japanese&sort=reviews");
+    ).toBe("/charts?sort=reviews&period=week&category=japanese");
   });
 
   it("デフォルト値(all/rating)はクエリに含めない", () => {
     expect(
-      rankingPageHref("/albums", { period: "all", category: "all", sort: "rating" }),
-    ).toBe("/albums");
+      chartsPageHref({ period: "all", category: "all", sort: "rating" }),
+    ).toBe("/charts");
+  });
+
+  it("新着順では期間を落とす", () => {
+    expect(chartsPageHref({ sort: "newest", period: "week" })).toBe(
+      "/charts?sort=newest",
+    );
   });
 
   it("hashを付与する", () => {
-    expect(rankingPageHref("/albums", { hash: "top" })).toBe("/albums#top");
+    expect(chartsPageHref({ hash: "top" })).toBe("/charts#top");
   });
 
   it("クエリとhashを両方付与する", () => {
-    expect(rankingPageHref("/albums", { period: "week", hash: "top" })).toBe(
-      "/albums?period=week#top",
+    expect(chartsPageHref({ period: "week", hash: "top" })).toBe(
+      "/charts?period=week#top",
     );
   });
 });
 
-describe("albumsPageHref / chartsPageHref", () => {
-  it("albumsPageHrefは/albumsを使う", () => {
-    expect(albumsPageHref({ period: "month" })).toBe("/albums?period=month");
+describe("sortSupportsPeriod", () => {
+  it("評価順・レビュー数順は期間を持つ", () => {
+    expect(sortSupportsPeriod("rating")).toBe(true);
+    expect(sortSupportsPeriod("reviews")).toBe(true);
   });
-  it("chartsPageHrefは/chartsを使う", () => {
-    expect(chartsPageHref({ sort: "reviews" })).toBe("/charts?sort=reviews");
+
+  it("新着順は期間を持たない", () => {
+    expect(sortSupportsPeriod("newest")).toBe(false);
   });
 });
 

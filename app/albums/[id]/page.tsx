@@ -79,7 +79,7 @@ function resolveBackLink(
     return { href: "/", label: "← ホーム" };
   }
 
-  return { href: "/albums", label: "← アルバム一覧" };
+  return { href: "/charts?sort=newest", label: "← アルバム一覧" };
 }
 
 export async function generateMetadata({
@@ -233,8 +233,8 @@ export default async function AlbumDetailPage({
       {
         "@type": "ListItem",
         position: 2,
-        name: "アルバム",
-        item: siteUrl("/albums"),
+        name: "ランキング",
+        item: siteUrl("/charts"),
       },
       {
         "@type": "ListItem",

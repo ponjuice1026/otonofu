@@ -2,7 +2,11 @@ import type { Album } from "@/lib/types";
 
 export type RankingPeriod = "all" | "week" | "month";
 
-export type RankingSort = "rating" | "reviews";
+/**
+ * "newest" だけはランキングではなく全アルバムの新着順一覧を指す。
+ * 旧 /albums ページを /charts に統合した際のタブとして残している。
+ */
+export type RankingSort = "rating" | "reviews" | "newest";
 
 export type RankingCategory =
   | "all"
@@ -25,7 +29,13 @@ export const RANKING_PERIOD_OPTIONS = [
 export const RANKING_SORT_OPTIONS = [
   { value: "rating" as const, label: "評価順" },
   { value: "reviews" as const, label: "レビュー数順" },
+  { value: "newest" as const, label: "新着順" },
 ];
+
+/** 新着順は期間フィルタを持たない（全アルバムをリリース年の新しい順に並べるため）。 */
+export function sortSupportsPeriod(sort: RankingSort): boolean {
+  return sort !== "newest";
+}
 
 export const RANKING_CATEGORY_OPTIONS = [
   { value: "all" as const, label: "すべて" },
@@ -53,7 +63,7 @@ export function parseRankingPeriod(value: string | undefined): RankingPeriod {
 }
 
 export function parseRankingSort(value: string | undefined): RankingSort {
-  if (value === "reviews") return "reviews";
+  if (value === "reviews" || value === "newest") return value;
   return "rating";
 }
 
@@ -119,54 +129,43 @@ export function rankingCategoryLabel(category: RankingCategory): string {
   );
 }
 
-export function albumsPageHref(params: {
+export type RankingPageParams = {
   page?: number;
   period?: RankingPeriod;
   category?: RankingCategory;
   sort?: RankingSort;
   hash?: string;
-}): string {
-  return rankingPageHref("/albums", params);
-}
+};
 
-export function chartsPageHref(params: {
-  period?: RankingPeriod;
-  category?: RankingCategory;
-  sort?: RankingSort;
-  hash?: string;
-}): string {
-  return rankingPageHref("/charts", params);
-}
-
-export function rankingPageHref(
-  basePath: "/albums" | "/charts",
-  params: {
-    page?: number;
-    period?: RankingPeriod;
-    category?: RankingCategory;
-    sort?: RankingSort;
-    hash?: string;
-  },
-): string {
+/**
+ * ランキング（/charts）の URL を組み立てる。
+ * 既定値（period=all / category=all / sort=rating / page=1）はクエリに出さない。
+ */
+export function chartsPageHref(params: RankingPageParams): string {
   const search = new URLSearchParams();
 
-  if (basePath === "/albums" && params.page && params.page > 1) {
-    search.set("page", String(params.page));
+  if (params.sort && params.sort !== "rating") {
+    search.set("sort", params.sort);
   }
-  if (params.period && params.period !== "all") {
+  // 期間を持たない並び順では period を落とす。
+  if (
+    params.period &&
+    params.period !== "all" &&
+    sortSupportsPeriod(params.sort ?? "rating")
+  ) {
     search.set("period", params.period);
   }
   if (params.category && params.category !== "all") {
     search.set("category", params.category);
   }
-  if (params.sort && params.sort !== "rating") {
-    search.set("sort", params.sort);
+  if (params.page && params.page > 1) {
+    search.set("page", String(params.page));
   }
 
   const query = search.toString();
   const hash = params.hash ? `#${params.hash}` : "";
 
-  return query ? `${basePath}?${query}${hash}` : `${basePath}${hash}`;
+  return query ? `/charts?${query}${hash}` : `/charts${hash}`;
 }
 
 export function rankingPeriodSince(period: Exclude<RankingPeriod, "all">): Date {

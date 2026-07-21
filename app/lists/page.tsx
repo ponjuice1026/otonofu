@@ -125,7 +125,7 @@ export default async function ListsPage({ searchParams }: PageProps) {
                 最初のリストを作る →
               </Link>
             ) : (
-              <Link href="/albums" className="link-accent hover:underline">
+              <Link href="/charts" className="link-accent hover:underline">
                 アルバムを探す →
               </Link>
             )}

@@ -12,7 +12,8 @@ export function AlbumPagination({
   currentPage,
   totalCount,
   pageSize = ALBUMS_PAGE_SIZE,
-  hrefForPage = (page) => (page === 1 ? "/albums" : `/albums?page=${page}`),
+  hrefForPage = (page) =>
+    page === 1 ? "/charts?sort=newest" : `/charts?sort=newest&page=${page}`,
 }: AlbumPaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   if (totalPages <= 1) return null;
