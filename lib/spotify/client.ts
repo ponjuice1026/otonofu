@@ -9,12 +9,26 @@ let tokenCache: TokenCache | null = null;
 let lastRequestAt = 0;
 
 const MAX_RETRIES = 8;
-const MAX_RETRY_WAIT_SEC = 180;
+// 1回の 429 で待つ上限。これを超える Retry-After を返された場合は待たずに
+// 即エラーにする。Spotify がクォータ超過で長い Retry-After を返している間は
+// 何度リクエストしても通らず、待ち続けても同期は1件も進まないため。
+// 呼び出し側（キュー同期）が failed として記録し、次回実行で再試行する。
+const MAX_RETRY_WAIT_SEC = 30;
+// 1リクエストあたりの 429 待機の合計上限。
+const MAX_TOTAL_RETRY_WAIT_SEC = 90;
+// fetch 自体のタイムアウト。未設定だとソケットが死んだまま無限に待つ。
+const REQUEST_TIMEOUT_MS = 20_000;
 
 export type SpotifyFetchOptions = {
   maxRetries?: number;
   maxRetryWaitSec?: number;
+  maxTotalRetryWaitSec?: number;
 };
+
+function requestTimeoutMs(): number {
+  const env = Number(process.env.SPOTIFY_REQUEST_TIMEOUT_MS);
+  return Number.isFinite(env) && env > 0 ? env : REQUEST_TIMEOUT_MS;
+}
 
 function minRequestIntervalMs(): number {
   const env = Number(process.env.SPOTIFY_REQUEST_INTERVAL_MS);
@@ -59,6 +73,7 @@ export async function getSpotifyAccessToken(): Promise<string> {
     },
     body: "grant_type=client_credentials",
     cache: "no-store",
+    signal: AbortSignal.timeout(requestTimeoutMs()),
   });
 
   if (!response.ok) {
@@ -89,40 +104,55 @@ export async function spotifyFetch<T>(
 ): Promise<T> {
   const maxRetries = options.maxRetries ?? MAX_RETRIES;
   const maxRetryWaitSec = options.maxRetryWaitSec ?? MAX_RETRY_WAIT_SEC;
+  const maxTotalRetryWaitSec =
+    options.maxTotalRetryWaitSec ?? MAX_TOTAL_RETRY_WAIT_SEC;
 
-  await throttleRequests();
-
-  const token = await getSpotifyAccessToken();
   const url = path.startsWith("http")
     ? path
     : `https://api.spotify.com/v1${path}`;
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
+  let waitedSec = 0;
 
-  if (response.status === 429 && attempt < maxRetries) {
-    const retryAfter = Number(response.headers.get("Retry-After") ?? "5");
-    const waitSec = Math.min(
-      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 5,
-      maxRetryWaitSec,
-    );
-    if (process.env.SPOTIFY_SYNC_VERBOSE === "1") {
-      console.warn(
-        `[Spotify] 429 — ${waitSec}s 待機 (${attempt + 1}/${maxRetries})`,
+  for (let i = attempt; ; i += 1) {
+    await throttleRequests();
+    const token = await getSpotifyAccessToken();
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(requestTimeoutMs()),
+    });
+
+    if (response.status !== 429) {
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`Spotify API error ${response.status}: ${body}`);
+      }
+      return (await response.json()) as T;
+    }
+
+    const header = Number(response.headers.get("Retry-After") ?? "5");
+    const retryAfter = Number.isFinite(header) && header > 0 ? header : 5;
+
+    // Retry-After が上限を超える／リトライ回数・待機予算を使い切った場合は
+    // 待たずに投げる。ここで粘っても通らないので、呼び出し側に判断を返す。
+    if (
+      retryAfter > maxRetryWaitSec ||
+      i >= maxRetries ||
+      waitedSec + retryAfter > maxTotalRetryWaitSec
+    ) {
+      throw new Error(
+        `Spotify API error 429: rate limited (Retry-After: ${retryAfter}s, ` +
+          `attempts: ${i + 1}, waited: ${waitedSec}s)`,
       );
     }
-    await sleep(waitSec * 1000 + 500);
-    return spotifyFetch<T>(path, attempt + 1, options);
-  }
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Spotify API error ${response.status}: ${body}`);
+    console.warn(
+      `[Spotify] 429 — ${retryAfter}s 待機 (${i + 1}/${maxRetries}, 累計 ${waitedSec}s)`,
+    );
+    await sleep(retryAfter * 1000 + 500);
+    waitedSec += retryAfter;
   }
-
-  return response.json() as Promise<T>;
 }
 
 export async function spotifyFetchForPage<T>(path: string): Promise<T> {
