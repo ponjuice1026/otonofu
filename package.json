@@ -4,7 +4,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/ryoyuasa2007-bot/-otonofu.git"
+    "url": "https://github.com/ponjuice1026/otonofu.git"
   },
   "scripts": {
     "dev": "next dev",
