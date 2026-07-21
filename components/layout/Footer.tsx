@@ -25,6 +25,9 @@ export function Footer() {
           <Link href="/albums" className="transition hover:text-neutral-300">
             アルバム
           </Link>
+          <Link href="/artists" className="transition hover:text-neutral-300">
+            アーティスト
+          </Link>
         </div>
       </div>
     </footer>
