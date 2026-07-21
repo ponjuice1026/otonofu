@@ -32,6 +32,7 @@ describe("RATE_LIMITS", () => {
   it("期待するアクションキーが揃っている", () => {
     expect(Object.keys(RATE_LIMITS).sort()).toEqual(
       [
+        "contact",
         "contribution",
         "follow",
         "list_create",

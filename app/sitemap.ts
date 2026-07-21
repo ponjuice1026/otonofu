@@ -4,6 +4,7 @@ import { getArtists } from "@/lib/data/artists";
 import { getDiscussionThreadsPage } from "@/lib/data/threads";
 import { getPublicLists } from "@/lib/data/lists";
 import { siteUrl } from "@/lib/site";
+import { SITE_INFO_LINKS } from "@/lib/site-legal";
 
 // sitemap はクローラ専用で生成頻度が低い。配下のデータ取得（getAlbums /
 // getPublicLists / getDiscussionThreadsPage 等）が cookie を読む server 版
@@ -32,6 +33,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(),
     changeFrequency: "daily",
     priority: path === "/" ? 1 : 0.7,
+  }));
+
+  // サイト情報ページ（規約・ポリシー等）。更新頻度が低く優先度も低い。
+  // 特商法表記は noindex のため除外する。
+  const infoEntries: MetadataRoute.Sitemap = SITE_INFO_LINKS.filter(
+    (link) => link.href !== "/tokushoho",
+  ).map((link) => ({
+    url: siteUrl(link.href),
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.3,
   }));
 
   const [albums, artists, publicLists] = await Promise.all([
@@ -79,6 +91,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticEntries,
+    ...infoEntries,
     ...albumEntries,
     ...artistEntries,
     ...listEntries,

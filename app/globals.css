@@ -1408,3 +1408,111 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- サイト情報ページ（規約・ポリシー・ガイド等）の本文組版 --- */
+
+.legal-prose {
+  max-width: 44rem;
+  font-size: 0.9375rem;
+  line-height: 1.85;
+  color: var(--muted-foreground);
+}
+
+.legal-prose > * + * {
+  margin-top: 1rem;
+}
+
+.legal-prose > :first-child {
+  margin-top: 0;
+}
+
+.legal-prose h2 {
+  margin-top: 2.75rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+  color: var(--foreground);
+}
+
+.legal-prose h3 {
+  margin-top: 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.legal-prose ul,
+.legal-prose ol {
+  padding-left: 1.25rem;
+}
+
+.legal-prose ul {
+  list-style: disc;
+}
+
+.legal-prose ol {
+  list-style: decimal;
+}
+
+.legal-prose li + li {
+  margin-top: 0.375rem;
+}
+
+.legal-prose a {
+  color: var(--brand-violet);
+  text-underline-offset: 3px;
+}
+
+.legal-prose a:hover {
+  color: var(--brand-amber);
+  text-decoration: underline;
+}
+
+.legal-prose strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+/* 定義リスト（特商法表記など「項目 / 内容」の対） */
+.legal-defs {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.legal-defs > div {
+  display: grid;
+  gap: 0.25rem 1.5rem;
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.legal-defs > div + div {
+  border-top: 1px solid var(--border);
+}
+
+.legal-defs dt {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.legal-defs dd {
+  color: var(--muted-foreground);
+}
+
+@media (min-width: 640px) {
+  .legal-defs > div {
+    grid-template-columns: 13rem 1fr;
+    align-items: baseline;
+  }
+}
+
+.legal-updated {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}

@@ -217,6 +217,26 @@ export type DbContributionRequest = {
   resolved_at: string | null;
 };
 
+export type DbContactCategory =
+  | "question"
+  | "bug"
+  | "request"
+  | "data"
+  | "report"
+  | "business"
+  | "other";
+
+export type DbContactMessage = {
+  id: string;
+  sender_id: string | null;
+  category: DbContactCategory;
+  name: string;
+  email: string;
+  body: string;
+  handled: boolean;
+  created_at: string;
+};
+
 export type DbNotificationType =
   | "thread_reply"
   | "post_reply"
