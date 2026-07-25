@@ -58,6 +58,43 @@ function ensureConfigured(): AuthFormState | null {
   return null;
 }
 
+/**
+ * Google アカウントでのログイン / 新規登録。
+ *
+ * signInWithOAuth は Google の同意画面 URL を返すだけで、Cookie の確立は
+ * リダイレクト後の /auth/callback（exchangeCodeForSession）で行われる。
+ * 成功後の遷移先は callback の `next` に載せる。
+ *
+ * 事前設定（Supabase ダッシュボード）:
+ *   Authentication → Providers → Google を有効化し、Google Cloud Console で
+ *   発行した Client ID / Secret を登録する。承認済みリダイレクト URI には
+ *   `<SUPABASE_URL>/auth/v1/callback` を、Supabase の Redirect URLs には
+ *   本番 `${NEXT_PUBLIC_SITE_URL}/auth/callback` を許可すること。
+ */
+export async function signInWithGoogle(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const configError = ensureConfigured();
+  if (configError) return configError;
+
+  const next = safeRedirectPath(formData.get("redirect"));
+  const redirectTo = `${await getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}`;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo },
+  });
+
+  if (error || !data.url) {
+    return { error: translateAuthError(error?.message ?? "google_oauth") };
+  }
+
+  // Google の同意画面へ遷移する（以降は /auth/callback が処理）。
+  redirect(data.url);
+}
+
 export async function login(
   _prevState: AuthFormState,
   formData: FormData,
@@ -242,6 +279,12 @@ function translateAuthError(message: string): string {
   }
   if (message.toLowerCase().includes("rate limit")) {
     return "リクエストが多すぎます。しばらくしてから再度お試しください。";
+  }
+  if (
+    message.includes("google_oauth") ||
+    message.toLowerCase().includes("provider is not enabled")
+  ) {
+    return "Google ログインを利用できません。時間をおいて再度お試しください。";
   }
   return message;
 }
